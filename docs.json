@@ -47,13 +47,9 @@
   ],
   "global": {
     "anchors": [
+      
       {
-        "anchor": "Documentation",
-        "href": "https://mintlify.com/docs",
-        "icon": "book-open-cover"
-      },
-      {
-        "anchor": "Website",
+        "anchor": "My Profile",
         "href": "https://riad.com.bd",
         "icon": "newspaper"
       }
