@@ -16,6 +16,17 @@
           "index"
         ]
     },
+    {
+  "group": "Getting started",
+  "pages": [
+    "quickstart",
+    {
+      "group": "Advanced",
+      "expanded": false,
+      "pages": ["installation", "configuration"]
+    }
+  ]
+},
       {
         "group": "Operating System",
         "expanded": false,
