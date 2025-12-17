@@ -17,13 +17,13 @@
         "index",
         "quickstart",
         "development",
-        "linux"
+        "Linux"
       ]
     },
     {
       "group": "Operating System",
       "pages": [
-        "linux",
+        "Linux",
         "windows",
         "index"
       ]
