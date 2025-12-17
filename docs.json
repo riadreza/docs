@@ -8,9 +8,14 @@
     "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
-  "pages": ["Linux"],
   "navigation": {
     "groups": [
+      {
+        "group": " ",
+        "pages": [
+          "Linux"
+        ]
+    },
       {
         "group": "Operating System",
         "pages": [
