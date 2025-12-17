@@ -9,10 +9,7 @@
   },
   "favicon": "/favicon.svg",
   "googleAnalytics": "G-FVFQVE8EKS",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Guides",
+  "navigation": { 
         "groups": [
           {
             "group": "Getting started",
@@ -48,8 +45,7 @@
             ]
           }
         ]
-      }
-    ],
+      },
     "global": {
       "anchors": [
         {
