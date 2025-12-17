@@ -10,6 +10,7 @@
   "favicon": "/favicon.svg",
   "googleAnalytics": "G-FVFQVE8EKS",
   "navigation": {
+  "pages": ["Linux"],
   "groups": [
     {
       "group": "Operating System",
