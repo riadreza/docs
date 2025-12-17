@@ -21,7 +21,7 @@
     "pages": [
       "Linux",
       {
-        "group": "Advanced",
+        "group": "Linux Distributions",
         "expanded": false,
         "pages": ["Linux/ubuntu"]
       }
