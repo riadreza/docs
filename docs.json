@@ -8,17 +8,16 @@
     "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
-  "googleAnalytics": "G-FVFQVE8EKS",
-  "navigation": {
   "pages": ["Linux"],
-  "groups": [
-    {
-      "group": "Operating System",
-      "pages": [
-        "Linux",
-        "windows",
-        "index"
-      ]
+  "navigation": {
+    "groups": [
+      {
+        "group": "Operating System",
+        "pages": [
+          "Linux",
+          "windows",
+          "index"
+        ]
     },
     {
       "group": "Getting started",
