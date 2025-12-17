@@ -18,7 +18,7 @@
     },
       {
         "group": "Operating System",
-        "expanded": true,
+        "expanded": false,
         "pages": [
           "Linux",
           "Linux/ubuntu"
