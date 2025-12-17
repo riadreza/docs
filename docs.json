@@ -19,15 +19,14 @@
       {
         "group": "Operating System",
         "pages": [
-          "Linux"
+          "Linux/ubuntu"
         ]
     },
     {
       "group": "Getting started",
       "pages": [
         "quickstart",
-        "development",
-        "Linux"
+        "development"
       ]
     },
     {
