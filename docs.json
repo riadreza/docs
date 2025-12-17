@@ -23,7 +23,8 @@
       "group": "Operating System",
       "pages": [
         "linux",
-        "windows"
+        "windows",
+        "index"
       ]
     },
     {
