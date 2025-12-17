@@ -13,21 +13,18 @@
       {
         "group": " ",
         "pages": [
-          "Linux"
+          "index"
         ]
     },
       {
         "group": "Operating System",
         "pages": [
-          "Linux",
-          "windows",
-          "index"
+          "Linux"
         ]
     },
     {
       "group": "Getting started",
       "pages": [
-        "index",
         "quickstart",
         "development",
         "Linux"
