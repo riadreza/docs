@@ -17,7 +17,14 @@
         "index",
         "quickstart",
         "development",
-        "linux"
+      ]
+    },
+    {
+      "group": "Operating System",
+      "pages": [
+        "Linux",
+        "Windows",
+        "MacOS"
       ]
     },
     {
