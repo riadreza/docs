@@ -9,58 +9,57 @@
   },
   "favicon": "/favicon.svg",
   "googleAnalytics": "G-FVFQVE8EKS",
-  "navigation": { 
-        "groups": [
-          {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development",
-              "Linux"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Website",
-          "href": "https://riad.com.bd",
-          "icon": "newspaper"
-        }
+  "navigation": {
+  "groups": [
+    {
+      "group": "Getting started",
+      "pages": [
+        "index",
+        "quickstart",
+        "development",
+        "Linux"
+      ]
+    },
+    {
+      "group": "Customization",
+      "pages": [
+        "essentials/settings",
+        "essentials/navigation"
+      ]
+    },
+    {
+      "group": "Writing content",
+      "pages": [
+        "essentials/markdown",
+        "essentials/code",
+        "essentials/images",
+        "essentials/reusable-snippets"
+      ]
+    },
+    {
+      "group": "AI tools",
+      "pages": [
+        "ai-tools/cursor",
+        "ai-tools/claude-code",
+        "ai-tools/windsurf"
       ]
     }
-  },
+  ],
+  "global": {
+    "anchors": [
+      {
+        "anchor": "Documentation",
+        "href": "https://mintlify.com/docs",
+        "icon": "book-open-cover"
+      },
+      {
+        "anchor": "Website",
+        "href": "https://riad.com.bd",
+        "icon": "newspaper"
+      }
+    ]
+  }
+},
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
