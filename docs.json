@@ -22,9 +22,7 @@
     {
       "group": "Operating System",
       "pages": [
-        "linux",
-        "Windows",
-        "MacOS"
+        "linux"
       ]
     },
     {
