@@ -12,20 +12,20 @@
   "navigation": {
   "groups": [
     {
+      "group": "Operating System",
+      "pages": [
+        "Linux",
+        "windows",
+        "index"
+      ]
+    },
+    {
       "group": "Getting started",
       "pages": [
         "index",
         "quickstart",
         "development",
         "Linux"
-      ]
-    },
-    {
-      "group": "Operating System",
-      "pages": [
-        "Linux",
-        "windows",
-        "index"
       ]
     },
     {
