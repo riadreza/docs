@@ -17,16 +17,16 @@
         ]
     },
     {
-  "group": "Getting started",
-  "pages": [
-    "quickstart",
-    {
-      "group": "Advanced",
-      "expanded": false,
-      "pages": ["installation", "configuration"]
-    }
-  ]
-},
+    "group": "Getting started",
+    "pages": [
+      "Linux",
+      {
+        "group": "Advanced",
+        "expanded": false,
+        "pages": ["Linux/ubuntu"]
+      }
+    ]
+    },
       {
         "group": "Operating System",
         "expanded": false,
