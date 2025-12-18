@@ -9,10 +9,13 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "pages": [
-          "index"
-        ],
     "groups": [
+      {
+        "group": " ",
+        "pages": [
+          "index"
+        ]
+    },
     {
     "group": "Operating Systems",
     "pages": [
@@ -24,6 +27,7 @@
                   "Linux/fedora",
                   "Linux/debian",
                   "Linux/arch"
+                  
       ]
       }
     ]
