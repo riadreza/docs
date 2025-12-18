@@ -19,7 +19,7 @@
     {
     "group": "Getting started",
     "pages": [
-      "Linux",
+      "Linux/Linux",
       {
         "group": "Linux Distributions",
         "expanded": false,
