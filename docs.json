@@ -33,6 +33,20 @@
     ]
     },
     {
+    "group": "Containerization",
+    "pages": [
+      "Container/Containerization",
+      {
+        "group": "Containerization",
+        "expanded": false,
+        "pages": ["Container/docker",
+                  "Container/kubernetes",
+                  "Container/podman"
+      ]
+      }
+    ]
+    },
+    {
       "group": "Getting started",
       "pages": [
         "quickstart",
