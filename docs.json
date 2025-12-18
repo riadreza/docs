@@ -32,14 +32,6 @@
       }
     ]
     },
-      {
-        "group": "Operating System",
-        "expanded": false,
-        "pages": [
-          "Linux",
-          "Linux/ubuntu"
-        ]
-    },
     {
       "group": "Getting started",
       "pages": [
