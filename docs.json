@@ -9,6 +9,9 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
+    "pages": [
+          "index"
+        ],
     "groups": [
       {
         "group": "Introduction",
