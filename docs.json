@@ -17,13 +17,17 @@
         ]
     },
     {
-    "group": "Getting started",
+    "group": "Operating Systems",
     "pages": [
       "Linux/Linux",
       {
         "group": "Linux Distributions",
         "expanded": false,
-        "pages": ["Linux/ubuntu"]
+        "pages": ["Linux/ubuntu",
+                  "Linux/fedora",
+                  "Linux/debian",
+                  "Linux/arch"
+      ]
       }
     ]
     },
