@@ -36,11 +36,9 @@
     "pages": [
       "P-Container/Containerization",
       {
-        "group": "Containerization",
+        "group": "Containerization Technologies",
         "expanded": false,
-        "pages": ["P-Container/docker",
-                  "P-Container/kubernetes",
-                  "P-Container/podman"
+        "pages": ["P-Container/docker"
       ]
       }
     ]
