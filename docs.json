@@ -23,11 +23,10 @@
       {
         "group": "Linux Distributions",
         "expanded": false,
-        "pages": ["Linux/ubuntu",
-                  "Linux/fedora",
-                  "Linux/debian",
-                  "Linux/arch"
-                  
+        "pages": ["P-Linux/ubuntu",
+                  "P-Linux/fedora",
+                  "P-Linux/debian",
+                  "P-Linux/arch"
       ]
       }
     ]
@@ -39,9 +38,9 @@
       {
         "group": "Containerization",
         "expanded": false,
-        "pages": ["Container/docker",
-                  "Container/kubernetes",
-                  "Container/podman"
+        "pages": ["P-Container/docker",
+                  "P-Container/kubernetes",
+                  "P-Container/podman"
       ]
       }
     ]
