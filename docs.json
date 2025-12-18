@@ -3,9 +3,9 @@
   "theme": "almond",
   "name": "Knowledge Base",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#A31616",
+    "light": "#C90707",
+    "dark": "#801515"
   },
   "favicon": "/favicon.svg",
   "navigation": {
