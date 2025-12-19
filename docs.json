@@ -40,6 +40,12 @@
         "expanded": false,
         "pages": ["P-Container/docker"
       ]
+      },
+      {
+        "group": "Container Orchestration",
+        "expanded": false,
+        "pages": ["P-Container/kubernetes"
+      ]
       }
     ]
     },
