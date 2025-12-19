@@ -34,11 +34,11 @@
     {
     "group": "Containerization",
     "pages": [
-      "P-Container/Containerization",
+      "P-Container/docker",
       {
-        "group": "Containerization Technologies",
+        "group": "Docker Workouts",
         "expanded": false,
-        "pages": ["P-Container/docker"
+        "pages": ["P-Container/docker deploy Traefik and configure with Cloudflare"
       ]
       },
       {
