@@ -38,7 +38,7 @@
       {
         "group": "Docker Workouts",
         "expanded": false,
-        "pages": ["P-Container/docker deploy Traefik and configure with Cloudflare"
+        "pages": ["P-Container/deploy Traefik and configure with Cloudflare"
       ]
       },
       {
