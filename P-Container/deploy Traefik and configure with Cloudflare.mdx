@@ -12,18 +12,82 @@ Before we begin, ensure you have the following prerequisites in place:
 ## Step 1: Deploy Traefik with Docker
 1. Create a `docker-compose.yml` file to define the Traefik service:
    ```yaml
-   version: '3'
-    services:       
-      traefik:
-        image: traefik:v2.5
-        command:
-          - "--api.insecure=true"
-          - "--providers.docker=true"
-          - "--entrypoints.web.address=:80"
-          - "--entrypoints.websecure.address=:443"
-        ports:
-          - "80:80"
-          - "443:443"
-          - "8080:8080" # Traefik dashboard
-        volumes:
-          - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    services:
+  traefik:
+    image: traefik:v3.4
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - TZ=Asia/Dhaka
+      - CF_API_EMAIL="cloudflare mail ID"
+      - CF_DNS_API_TOKEN="genetate it from cloudflare"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik-data/acme.json:/acme.json
+      - ./traefik-data/traefik.yml:/etc/traefik/traefik.yml
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      # Dashboard
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.your-domain.com`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.tls.certresolver=cloudflare"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.middlewares=dashboard-auth"
+      - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXXXXXXXXX"
+
+networks:
+  web:
+    external: true
+    ```
+2. Create the necessary directories and files for Traefik configuration:
+   ```bash
+   mkdir -p traefik-data
+   touch traefik-data/acme.json
+   chmod 600 traefik-data/acme.json
+   ```
+3. Create the `traefik.yml` configuration file inside the `traefik-data` directory:
+   ```yaml
+   api:
+     dashboard: true
+    entryPoints:
+     web:
+       address: ":80"
+     websecure:
+       address: ":443"
+    providers:              
+        docker:
+        exposedByDefault: false
+    certificatesResolvers:
+     cloudflare:        
+       acme:
+         email: "cloudflare mail ID"        
+            storage: acme.json          
+            dnsChallenge:
+                provider: cloudflare
+                delayBeforeCheck: 0
+    ``` 
+4. Start the Traefik container using Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+## Step 2: Configure Cloudflare DNS     
+1. Log in to your Cloudflare account and navigate to the DNS settings for your domain.
+2. Create a new CNAME record pointing to your server's IP address:
+    - Name: `traefik` (or your desired subdomain)
+    - Target: Your server's IP address
+    - TTL: Auto
+    - Proxy status: Proxied (orange cloud)
+3. Save the DNS record.
+## Step 3: Access the Traefik Dashboard
+1. Open your web browser and navigate to `https://traefik.your-domain.com` (replace `your-domain.com` with your actual domain).
+2. You should see the Traefik dashboard. Log in using the credentials you set in the `docker-compose.yml` file. 
+## Conclusion
+You have successfully deployed Traefik and configured it to work with Cloudflare. You can now use Traefik to manage your web traffic securely and efficiently. For more advanced configurations, refer to the [official Traefik documentation](https://doc.traefik.io/traefik
