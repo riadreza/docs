@@ -9,6 +9,28 @@ Before we begin, ensure you have the following prerequisites in place:
 - A server or virtual machine with Docker installed.
 - A Cloudflare account with a domain configured.
 - Basic knowledge of Docker and Traefik.
+## Logical Diagram
+```plaintext
++-------------------+          +------------------+
+|                   |          |                  |
+|   Client Browser  +--------->|   Cloudflare     |
+|                   |          |                  |
++-------------------+          +--------+---------+
+                                        |
+                                        |                     +------------------+
+                                        |                     |                  |  
+                                        +-------------------->  Traefik Reverse  |      
+                                                                |     Proxy        |
+                                                                |                  |
+                                                                +--------+---------+
+                                                                         |
+                                                                         |
+                                                                +--------v---------+
+                                                                |                  |
+                                                                |   Backend Apps   |
+                                                                |                  |
+                                                                +------------------+            
+```         
 ## Step 1: Deploy Traefik with Docker
 1. Create a `docker-compose.yml` file to define the Traefik service:
     ```yaml
