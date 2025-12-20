@@ -11,8 +11,8 @@ Before we begin, ensure you have the following prerequisites in place:
 - Basic knowledge of Docker and Traefik.
 ## Step 1: Deploy Traefik with Docker
 1. Create a `docker-compose.yml` file to define the Traefik service:
-   ```yaml
-    services:
+```yaml
+services:
   traefik:
     image: traefik:v3.4
     container_name: traefik
@@ -46,7 +46,7 @@ Before we begin, ensure you have the following prerequisites in place:
 networks:
   web:
     external: true
-    ```
+```
 2. Create the necessary directories and files for Traefik configuration:
    ```bash
    mkdir -p traefik-data
