@@ -97,42 +97,42 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
 3. Create the `traefik.yml` configuration file inside the `traefik-data` directory:
     ```yaml
     api:
-    dashboard: true
-    insecure: false
+    dashboard: true # Enable the Traefik dashboard
+    insecure: false # Disable insecure access to the dashboard
 
-    entryPoints:
+    entryPoints: # Define entry points for HTTP and HTTPS
     web:
-        address: :80
-        http:
-        redirections:
-            entryPoint:
-            to: websecure
-            scheme: https
-    websecure:
-        address: :443
+        address: :80 # Listen on port 80 for HTTP
+        http: # Configure HTTP settings
+        redirections: # Set up redirections
+            entryPoint: # Redirect HTTP
+            to: websecure # to HTTPS
+            scheme: https # Use HTTPS scheme
+    websecure: # Define HTTPS entry point
+        address: :443 # Listen on port 443 for HTTPS
 
-    providers:
-    docker:
-        exposedByDefault: false
-        network: web
+    providers: # Define providers for Traefik
+    docker: # Use Docker as a provider
+        exposedByDefault: false # Do not expose all containers by default
+        network: web # Use the "web" network for Docker provider
 
-    certificatesResolvers:
-    cloudflare:
-        acme:
-        email: your email address
-        storage: /acme.json
-        dnsChallenge:
-            provider: cloudflare
-            resolvers:
-            - "1.1.1.1:53"
-            - "8.8.8.8:53"
-    log:
-    level: error
+    certificatesResolvers: # Define certificate resolvers
+    cloudflare: # Use Cloudflare DNS challenge
+        acme: # ACME configuration
+        email: your email address # Your email for Let's Encrypt notifications
+        storage: /acme.json # Path to store certificates
+        dnsChallenge: # Use DNS challenge for certificate validation
+            provider: cloudflare # Use Cloudflare as the DNS provider
+            resolvers: # DNS resolvers to use for the challenge
+            - "1.1.1.1:53" # Cloudflare DNS
+            - "8.8.8.8:53" # Google DNS
+    log: # Configure logging
+    level: error # Set log level to error
 
     ``` 
 4. Start the Traefik container using Docker Compose:
    ```bash
-   docker-compose up -d
+   docker compose -f docker-compose.yml up -d
    ```
 ## Step 2: Configure Cloudflare DNS 
 1. Log in to your Cloudflare account and navigate to the DNS settings for your domain.
