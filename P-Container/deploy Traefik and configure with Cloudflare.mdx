@@ -76,55 +76,55 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
     * Define external network for Traefik to communicate with other services
     </Note>
             
-   2. Create the necessary directories and files and change the directory permission for Traefik configuration:
-      ### Create the directory for Traefik data if it doesn't exist
-      ```bash
-      mkdir -p traefik-data
-      ```
-      ### Create the acme.json file to store TLS certificates 
-      ```bash
-      touch traefik-data/acme.json
-      ```
-      ### Set strict permissions so only the owner can read/write (required by Traefik)
-      ```bash  
-      chmod 600 traefik-data/acme.json
-      ```
-   3. Create the `traefik.yml` configuration file inside the `traefik-data` directory:
-      ```yaml
-      api:
-        dashboard: true
-        insecure: false
+2. Create the necessary directories and files and change the directory permission for Traefik configuration:
+    ### Create the directory for Traefik data if it doesn't exist
+    ```bash
+    mkdir -p traefik-data
+    ```
+    ### Create the acme.json file to store TLS certificates 
+    ```bash
+    touch traefik-data/acme.json
+    ```
+    ### Set strict permissions so only the owner can read/write (required by Traefik)
+    ```bash  
+    chmod 600 traefik-data/acme.json
+    ```
+3. Create the `traefik.yml` configuration file inside the `traefik-data` directory:
+    ```yaml
+    api:
+    dashboard: true
+    insecure: false
 
-        entryPoints:
-        web:
-            address: :80
-            http:
-            redirections:
-                entryPoint:
-                to: websecure
-                scheme: https
-        websecure:
-            address: :443
+    entryPoints:
+    web:
+        address: :80
+        http:
+        redirections:
+            entryPoint:
+            to: websecure
+            scheme: https
+    websecure:
+        address: :443
 
-        providers:
-        docker:
-            exposedByDefault: false
-            network: web
+    providers:
+    docker:
+        exposedByDefault: false
+        network: web
 
-        certificatesResolvers:
-        cloudflare:
-            acme:
-            email: your email address
-            storage: /acme.json
-            dnsChallenge:
-                provider: cloudflare
-                resolvers:
-                - "1.1.1.1:53"
-                - "8.8.8.8:53"
-        log:
-        level: error
+    certificatesResolvers:
+    cloudflare:
+        acme:
+        email: your email address
+        storage: /acme.json
+        dnsChallenge:
+            provider: cloudflare
+            resolvers:
+            - "1.1.1.1:53"
+            - "8.8.8.8:53"
+    log:
+    level: error
 
-       ``` 
+    ``` 
 4. Start the Traefik container using Docker Compose:
    ```bash
    docker-compose up -d
