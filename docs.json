@@ -23,7 +23,7 @@
       "P-Linux/Linux",
       {
         "group": "Linux Distributions",
-        "icon": "/icons/linux-distribution.svg",
+        "icon": "/icons/linux-distro.svg",
         "expanded": false,
         "pages": ["P-Linux/ubuntu",
                   "P-Linux/fedora",
