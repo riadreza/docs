@@ -69,14 +69,18 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
             - "traefik.http.routers.dashboard.tls.certresolver=cloudflare"  # Use Cloudflare DNS challenge for certificates
             - "traefik.http.routers.dashboard.entrypoints=websecure"  # Use the "websecure" entrypoint (usually port 443)
             - "traefik.http.routers.dashboard.middlewares=dashboard-auth"  # Protect dashboard with basic auth
-    ```
-                - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXXXXXXXXX"  # Basic auth user (bcrypt hash)
-                # NOTE: Replace the placeholder bcrypt hash above with a real hash. You can generate one at https://bcrypt-generator.com/ or using the `htpasswd` tool.
-            # Define external network for Traefik to communicate with other services
-            networks:
+            - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXXXXXXXXX"  # Basic auth user (bcrypt hash)
+        networks:
             web:
-            external: true      
-        ```
+            external: true  # Use an external network named "web"
+    ```
+    <Note>
+    * Replace the placeholder bcrypt hash above with a real hash. You can generate one at https://bcrypt-generator.com/ or using the `htpasswd` tool.
+    * Define external network for Traefik to communicate with other services
+    * Define the external network for Traefik to communicate with other services
+    </Note>
+
+                  
 2. Create the necessary directories and files and change the directory permission for Traefik configuration:
     ### Create the directory for Traefik data if it doesn't exist
     ```bash
