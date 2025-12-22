@@ -69,8 +69,8 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
             - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXXXXXXXXX"  # Basic auth user (bcrypt hash)
     ```
     ```NOTE
-                # NOTE: Replace the placeholder bcrypt hash above with a real hash. You can generate one at https://bcrypt-generator.com/ or using the `htpasswd` tool.
-            # Define external network for Traefik to communicate with other services
+    # NOTE: Replace the placeholder bcrypt hash above with a real hash. You can generate one at https://bcrypt-generator.com/ or using the `htpasswd` tool.
+    # Define external network for Traefik to communicate with other services
     ```
             networks:
             web:
