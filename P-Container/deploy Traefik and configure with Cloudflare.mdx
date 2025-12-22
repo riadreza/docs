@@ -32,99 +32,45 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
                                                               |                  |
                                                               +------------------+            
 ```         
-## Deploy Traefik with Docker
-    <Steps>
-    <Step title="'docker-compose.yml' File Creation">
-    Create a `docker-compose.yml` file to define the Traefik service:
-    ```yaml
-        # Define the services to be run by Docker Compose
-        services:
-        traefik:
-            image: traefik:v3.4  # Use Traefik version 3.4 image
-            container_name: traefik  # Name the container "traefik"
-            restart: unless-stopped  # Always restart unless explicitly stopped
-            security_opt:
-            - no-new-privileges:true  # Prevent container from gaining new privileges
-            ports:
-            - "80:80"    # Expose HTTP on port 80
-            - "443:443"  # Expose HTTPS on port 443
-            environment:
-            - TZ=Asia/Dhaka  # Set timezone
-            - CF_API_EMAIL=your-cloudflare-email@example.com  # Cloudflare account email for DNS challenge
-            - CF_DNS_API_TOKEN=your-cloudflare-dns-token      # Cloudflare API token for DNS challenge
-            volumes:
-        - ./traefik-data/acme.json:/acme.json
-        # Make sure acme.json exists, is chmod 600, and owned by the Traefik user to avoid permission errors.
-        - ./traefik-data/traefik.yml:/etc/traefik/traefik.yml
-            - ./traefik-data/traefik.yml:/etc/traefik/traefik.yml  # Traefik static configuration file
-            networks:
-            - web  # Attach to the external "web" network
-            labels:
-            - "traefik.enable=true"  # Enable Traefik for this container
-            # Dashboard configuration
-            - "traefik.http.routers.dashboard.rule=Host(`traefik.your-domain.com`)"  # Dashboard accessible at this domain
-            - "traefik.http.routers.dashboard.service=api@internal"  # Use Traefik's internal API service
-            - "traefik.http.routers.dashboard.tls=true"  # Enable TLS for the dashboard
-            - "traefik.http.routers.dashboard.tls.certresolver=cloudflare"  # Use Cloudflare DNS challenge for certificates
-            - "traefik.http.routers.dashboard.entrypoints=websecure"  # Use the "websecure" entrypoint (usually port 443)
-            - "traefik.http.routers.dashboard.middlewares=dashboard-auth"  # Protect dashboard with basic auth
-            - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXXXXXXXXX"  # Basic auth user (bcrypt hash)
-        networks:
-            web:
-            external: true     # Use an existing external network named "web" 
-    ```
-    </Step>
-
-    <Step title="Preview locally">
-
-    Navigate to your docs directory where your `docs.json` file is located, and run the following command:
-
-    ```bash
-    mint dev
-    ```
-
-    A local preview of your documentation will be available at `http://localhost:3000`.
-
-    </Step>
-    </Steps>
+## Step 1: Deploy Traefik with Docker
 1. Create a `docker-compose.yml` file to define the Traefik service:
-    ```yaml
-        # Define the services to be run by Docker Compose
-        services:
-        traefik:
-            image: traefik:v3.4  # Use Traefik version 3.4 image
-            container_name: traefik  # Name the container "traefik"
-            restart: unless-stopped  # Always restart unless explicitly stopped
-            security_opt:
-            - no-new-privileges:true  # Prevent container from gaining new privileges
-            ports:
-            - "80:80"    # Expose HTTP on port 80
-            - "443:443"  # Expose HTTPS on port 443
-            environment:
-            - TZ=Asia/Dhaka  # Set timezone
-            - CF_API_EMAIL=your-cloudflare-email@example.com  # Cloudflare account email for DNS challenge
-            - CF_DNS_API_TOKEN=your-cloudflare-dns-token      # Cloudflare API token for DNS challenge
-            volumes:
-        - ./traefik-data/acme.json:/acme.json
-        # Make sure acme.json exists, is chmod 600, and owned by the Traefik user to avoid permission errors.
-        - ./traefik-data/traefik.yml:/etc/traefik/traefik.yml
-            - ./traefik-data/traefik.yml:/etc/traefik/traefik.yml  # Traefik static configuration file
-            networks:
-            - web  # Attach to the external "web" network
-            labels:
-            - "traefik.enable=true"  # Enable Traefik for this container
-            # Dashboard configuration
-            - "traefik.http.routers.dashboard.rule=Host(`traefik.your-domain.com`)"  # Dashboard accessible at this domain
-            - "traefik.http.routers.dashboard.service=api@internal"  # Use Traefik's internal API service
-            - "traefik.http.routers.dashboard.tls=true"  # Enable TLS for the dashboard
-            - "traefik.http.routers.dashboard.tls.certresolver=cloudflare"  # Use Cloudflare DNS challenge for certificates
-            - "traefik.http.routers.dashboard.entrypoints=websecure"  # Use the "websecure" entrypoint (usually port 443)
-            - "traefik.http.routers.dashboard.middlewares=dashboard-auth"  # Protect dashboard with basic auth
-            - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXXXXXXXXX"  # Basic auth user (bcrypt hash)
-        networks:
-            web:
-            external: true     # Use an existing external network named "web" 
-    ```
+```yaml
+# Define the services to be run by Docker Compose
+services:
+traefik:
+    image: traefik:v3.4  # Use Traefik version 3.4 image
+    container_name: traefik  # Name the container "traefik"
+    restart: unless-stopped  # Always restart unless explicitly stopped
+    security_opt:
+    - no-new-privileges:true  # Prevent container from gaining new privileges
+    ports:
+    - "80:80"    # Expose HTTP on port 80
+    - "443:443"  # Expose HTTPS on port 443
+    environment:
+    - TZ=Asia/Dhaka  # Set timezone
+    - CF_API_EMAIL=your-cloudflare-email@example.com  # Cloudflare account email for DNS challenge
+    - CF_DNS_API_TOKEN=your-cloudflare-dns-token      # Cloudflare API token for DNS challenge
+    volumes:
+- ./traefik-data/acme.json:/acme.json
+# Make sure acme.json exists, is chmod 600, and owned by the Traefik user to avoid permission errors.
+- ./traefik-data/traefik.yml:/etc/traefik/traefik.yml
+    - ./traefik-data/traefik.yml:/etc/traefik/traefik.yml  # Traefik static configuration file
+    networks:
+    - web  # Attach to the external "web" network
+    labels:
+    - "traefik.enable=true"  # Enable Traefik for this container
+    # Dashboard configuration
+    - "traefik.http.routers.dashboard.rule=Host(`traefik.your-domain.com`)"  # Dashboard accessible at this domain
+    - "traefik.http.routers.dashboard.service=api@internal"  # Use Traefik's internal API service
+    - "traefik.http.routers.dashboard.tls=true"  # Enable TLS for the dashboard
+    - "traefik.http.routers.dashboard.tls.certresolver=cloudflare"  # Use Cloudflare DNS challenge for certificates
+    - "traefik.http.routers.dashboard.entrypoints=websecure"  # Use the "websecure" entrypoint (usually port 443)
+    - "traefik.http.routers.dashboard.middlewares=dashboard-auth"  # Protect dashboard with basic auth
+    - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXXXXXXXXX"  # Basic auth user (bcrypt hash)
+networks:
+    web:
+    external: true     # Use an existing external network named "web" 
+```
 <note>
     # NOTE: Replace the placeholder bcrypt hash above with a real hash. You can generate one at https://bcrypt-generator.com/ or using the `htpasswd` tool.
     # Define external network for Traefik to communicate with other services
