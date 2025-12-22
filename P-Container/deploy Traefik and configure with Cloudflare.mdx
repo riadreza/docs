@@ -36,7 +36,7 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
                                                               +------------------+            
 ```         
 ## Step 1: Deploy Traefik with Docker
-1. Create a `docker-compose.yml` file to define the Traefik service:
+a. Create a `docker-compose.yml` file to define the Traefik service:
     ```yaml
         # Define the services to be run by Docker Compose
         services:
@@ -81,7 +81,7 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
     </Note>
 
                   
-2. Create the necessary directories and files and change the directory permission for Traefik configuration:
+b. Create the necessary directories and files and change the directory permission for Traefik configuration:
     ### Create the directory for Traefik data if it doesn't exist
     ```bash
     mkdir -p traefik-data
@@ -94,7 +94,7 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
     ```bash  
     chmod 600 traefik-data/acme.json
     ```
-3. Create the `traefik.yml` configuration file inside the `traefik-data` directory:
+c. Create the `traefik.yml` configuration file inside the `traefik-data` directory:
     ```yaml
     api:
     dashboard: true # Enable the Traefik dashboard
@@ -130,21 +130,21 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
     level: error # Set log level to error
 
     ``` 
-4. Start the Traefik container using Docker Compose:
+d. Start the Traefik container using Docker Compose:
    ```bash
    docker compose -f docker-compose.yml up -d
    ```
 ## Step 2: Configure Cloudflare DNS 
-1. Log in to your Cloudflare account and navigate to the DNS settings for your domain.
-2. Add a CNAME record for your Traefik dashboard:
+a. Log in to your Cloudflare account and navigate to the DNS settings for your domain.
+b. Add a CNAME record for your Traefik dashboard:
    - Type: CNAME
    - Name: traefik  
     - Target: your-server-ip-or-domain
     - TTL: Auto
-3. Ensure that the proxy status is enabled (orange cloud icon) for the CNAME record.
+c. Ensure that the proxy status is enabled (orange cloud icon) for the CNAME record.
 ## Step 3: Access the Traefik Dashboard
-1. Open your web browser and navigate to `https://traefik.your-domain.com`.
-2. You should see the Traefik dashboard login prompt. Enter the username and password you configured in the `docker-compose.yml` file.
-3. Once logged in, you can monitor and manage your Traefik instance.
+a. Open your web browser and navigate to `https://traefik.your-domain.com`.
+b. You should see the Traefik dashboard login prompt. Enter the username and password you configured in the `docker-compose.yml` file.
+c. Once logged in, you can monitor and manage your Traefik instance.
 ## Conclusion
 You have successfully deployed Traefik and configured it to work with Cloudflare. You can now take advantage of Traefik's powerful features along with Cloudflare's security and performance enhancements for your
