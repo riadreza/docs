@@ -21,7 +21,7 @@
     },
     {
     "group": "Operating Systems",
-    "icon": "/icons/operatingsystem.svg",
+    "icon": "/icons/operating-system.svg",
     "pages": [
       "P-Linux/Linux",
       {
