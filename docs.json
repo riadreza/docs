@@ -2,9 +2,6 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "almond",
   "name": "Knowledge Base",
-  "toc": {
-    "maxDepth": 2
-  },
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
@@ -15,6 +12,7 @@
     "groups": [
       {
         "group": " ",
+        "icon": "/icons/profile.svg",
         "pages": [
           "index"
         ]
