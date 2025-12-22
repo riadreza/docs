@@ -33,6 +33,26 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
                                                               +------------------+            
 ```         
 ## Step 1: Deploy Traefik with Docker
+    <Steps>
+    <Step title="Install the Mintlify CLI">
+
+    ```bash
+    npm i -g mint
+    ```
+    </Step>
+
+    <Step title="Preview locally">
+
+    Navigate to your docs directory where your `docs.json` file is located, and run the following command:
+
+    ```bash
+    mint dev
+    ```
+
+    A local preview of your documentation will be available at `http://localhost:3000`.
+
+    </Step>
+    </Steps>
 1. Create a `docker-compose.yml` file to define the Traefik service:
     ```yaml
         # Define the services to be run by Docker Compose
@@ -71,10 +91,10 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
             web:
             external: true     # Use an existing external network named "web" 
     ```
-    <note>
+<note>
     # NOTE: Replace the placeholder bcrypt hash above with a real hash. You can generate one at https://bcrypt-generator.com/ or using the `htpasswd` tool.
     # Define external network for Traefik to communicate with other services
-    </note>
+ </note>
             
 2. Create the necessary directories and files and change the directory permission for Traefik configuration:
    ### Create the directory for Traefik data if it doesn't exist
