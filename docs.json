@@ -36,7 +36,7 @@
     },
     {
     "group": "Containerization",
-    "icon": "icon-container",
+    "icon": "icons/containers.svg",
     "pages": [
       "P-Container/docker",
       {
