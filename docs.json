@@ -12,7 +12,6 @@
     "groups": [
       {
         "group": " ",
-        "icon": "/icons/profile.svg",
         "pages": [
           "index"
         ]
