@@ -31,41 +31,12 @@ In this guide, we will walk through the steps to deploy <Icon icon="/icons/Traef
                                                               |   Backend Apps   |
                                                               |                  |
                                                               +------------------+            
-```
-<Steps>
-<Step title="Deploy Traefik with Docker CLI">
-Create a `docker-compose.yml` file to define the Traefik service:
-```yaml
-    # Define the services to be run by Docker Compose
-    services:
-      traefik:
-        image: traefik:v3.4  # Use Traefik version 3.4 image
-        container_name: traefik  # Name the container "traefik"
-        restart: unless-stopped  # Always restart unless explicitly stopped
-        security_opt:
-          - no-new-privileges:true  # Prevent container from gaining new privileges
-        ports:
-          - "80:80"    # Expose HTTP on port 80
-          - "443:443"  # Expose HTTPS on port 443
-        environment:
-          - TZ=Asia/Dhaka  # Set timezone
-          - CF_API_EMAIL=your-cloudflare-email@example.com  # Cloudflare account email for DNS challenge
-          - CF_DNS_API_TOKEN=your-cloudflare-dns-token      # Cloudflare API token for DNS challenge
-        volumes:
-          - ./traefik-data/acme.json:/acme.json
-          # Make sure acme.json exists, is chmod 600, and owned by the Traefik user to avoid permission errors.
-          - ./traefik-data/traefik.yml:/etc/traefik/traefik.yml
-        networks:
-          - web  # Attach to the external "web" network
-        labels:
-          - "traefik.enable=true"  # Enable Traefik for this container
-          # Dashboard configuration
-          - "traefik.http.routers.dashboard.rule=Host(`traefik.your-domain.com`)"  # Dashboard accessible at this domain
-          - "traefik.http.routers.dashboard.service=api@internal"  # Use Traefik's internal API service
-          - "traefik.http.routers.dashboard.tls=true"  # Enable TLS for the dashboard
-          - "traefik.http.routers.dashboard.tls.certresolver=cloudflare"  # Use Cloudflare DNS challenge for certificates
-          - "traefik.http.routers.dashboard.entrypoints=websecure"  # Use the "websecure" entrypoint (usually port 443)
-          - "traefik.http.routers.dashboard.middlewares=dashboard-auth"  # Protect dashboard with basic auth
+```         
+## Step 1: Deploy Traefik with Docker
+1. Create a `docker-compose.yml` file to define the Traefik service:
+    ```yaml
+        # Define the services to be run by Docker Compose
+        services:
         traefik:
             image: traefik:v3.4  # Use Traefik version 3.4 image
             container_name: traefik  # Name the container "traefik"
@@ -95,29 +66,30 @@ Create a `docker-compose.yml` file to define the Traefik service:
             - "traefik.http.routers.dashboard.tls.certresolver=cloudflare"  # Use Cloudflare DNS challenge for certificates
             - "traefik.http.routers.dashboard.entrypoints=websecure"  # Use the "websecure" entrypoint (usually port 443)
             - "traefik.http.routers.dashboard.middlewares=dashboard-auth"  # Protect dashboard with basic auth
-            - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXXXXXXXXX"  # Basic auth user (bcrypt hash)
-            # NOTE: Replace the placeholder bcrypt hash above with a real hash. You can generate one at https://bcrypt-generator.com/ or using the `htpasswd` tool.
+    ```
+                - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXXXXXXXXX"  # Basic auth user (bcrypt hash)
+                # NOTE: Replace the placeholder bcrypt hash above with a real hash. You can generate one at https://bcrypt-generator.com/ or using the `htpasswd` tool.
             # Define external network for Traefik to communicate with other services
             networks:
             web:
             external: true      
         ```
 2. Create the necessary directories and files and change the directory permission for Traefik configuration:
-   ### Create the directory for Traefik data if it doesn't exist
-   ```bash
+    ### Create the directory for Traefik data if it doesn't exist
+    ```bash
     mkdir -p traefik-data
     ```
     ### Create the acme.json file to store TLS certificates 
     ```bash
     touch traefik-data/acme.json
     ```
-   ### Set strict permissions so only the owner can read/write (required by Traefik)
-   ```bash  
+    ### Set strict permissions so only the owner can read/write (required by Traefik)
+    ```bash  
     chmod 600 traefik-data/acme.json
-   ```
+    ```
 3. Create the `traefik.yml` configuration file inside the `traefik-data` directory:
-   ```yaml
-   api:
+    ```yaml
+    api:
     dashboard: true
     insecure: false
 
