@@ -1,0 +1,60 @@
+---
+title: "Docker Troubleshooting"
+icon: "/icons/docker.svg"
+description: "Common Docker issues and their solutions to help you troubleshoot and resolve problems effectively."
+tags: ["Docker", "Troubleshooting", "Containers", "DevOps"]
+keywords: ["Docker", "Troubleshooting", "Containers", "DevOps", "Containerization", "Microservices"]
+---
+## Introduction
+Docker is a powerful containerization platform, but like any technology, it can sometimes present challenges. This guide aims to help you troubleshoot common Docker issues and provide solutions to resolve them effectively.
+## Common Docker Issues and Solutions
+### 1. Remove docker containers
+**Issue**: You have stopped containers that are no longer needed, but they are still taking up space.
+**Solution**: You can remove all stopped containers using the following command:
+```bash
+docker container prune
+```
+This command will prompt you for confirmation before deleting all stopped containers.   
+
+### 2. Docker Daemon Not Running
+**Issue**: You receive an error indicating that the Docker daemon is not running when trying to execute Docker commands.  
+**Solution**: Ensure that the Docker service is started. You can start the Docker daemon using the following commands based on your operating system:
+- **Linux**:
+  ```bash
+  sudo systemctl start docker
+  ```
+- **Windows**: Start Docker Desktop from the Start menu.
+- **macOS**: Start Docker Desktop from the Applications folder.
+### 3. Permission Denied Errors
+**Issue**: You encounter permission denied errors when trying to run Docker commands without `sudo`.            
+**Solution**: Add your user to the Docker group to run Docker commands without `sudo`:
+```bash
+sudo usermod -aG docker $USER
+```
+Log out and log back in for the changes to take effect.
+### 4. Container Fails to Start
+**Issue**: A Docker container fails to start, often due to configuration issues or missing dependencies.
+**Solution**: Check the container logs to identify the root cause:
+```bash
+docker logs <container_id>
+```
+Review the logs for error messages and address any configuration issues or missing dependencies.
+### 5. Network Issues
+**Issue**: Containers are unable to communicate with each other or the outside world.
+**Solution**: Verify the network settings and ensure that the appropriate ports are exposed. You can inspect the network configuration using:
+```bash
+docker network inspect <network_name>
+```
+Ensure that the containers are connected to the correct network and that firewall rules are not blocking traffic.
+### 6. Image Pull Failures
+**Issue**: Docker fails to pull images from Docker Hub or other registries.
+**Solution**: Check your internet connection and ensure that you have access to the Docker registry. If you're behind a proxy, configure Docker to use the proxy settings. You can also try logging in to the registry:
+```bash
+docker login
+```
+### 7. Disk Space Issues
+**Issue**: Docker runs out of disk space due to accumulated images, containers, and volumes.
+**Solution**: Clean up unused Docker resources using the following commands:
+```bash
+docker system prune -a
+```
