@@ -58,3 +58,26 @@ docker login
 ```bash
 docker system prune -a
 ```
+### 8. Check the available Docker version
+**Issue**: You want to ensure you are using the latest version of Docker.
+**Solution**: Check the installed Docker version with:
+```bash
+apt-cache madison docker-ce
+```
+### 9. Install a specific version
+**Issue**: You need to install a specific version of Docker.
+**Solution**: Install a specific version using:
+```bash
+sudo apt-get install docker-ce=<VERSION_STRING> docker-ce-cli=<VERSION_STRING> containerd.io
+```
+Replace `<VERSION_STRING>` with the desired version number.
+
+### 10. Hold packages to prevent auto-upgrade
+**Issue**: You want to prevent Docker from being automatically upgraded.
+**Solution**: Hold the Docker packages using:
+```bash
+sudo apt-mark hold docker-ce docker-ce-cli containerd.io
+```
+## Conclusion
+By following the troubleshooting steps outlined in this guide, you should be able to resolve common Docker issues effectively. If you encounter more complex problems, consider consulting the official Docker documentation or seeking help from the Docker community. Happy containerizing!
+    
