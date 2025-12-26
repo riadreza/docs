@@ -73,10 +73,12 @@ c. Enable the new configuration by creating a symbolic link:
 sudo ln -s /etc/nginx/sites-available/myapi.conf /etc/nginx/sites-enabled/
 ``` 
 d. Test the Nginx configuration for syntax errors:
-```bashsudo nginx -t
+```bash
+sudo nginx -t
 ```
 e. Reload Nginx to apply the changes:
-```bashsudo systemctl reload nginx
+```bash
+sudo systemctl reload nginx
 ```
 f. allow Nginx through the firewall:
 ```bash
