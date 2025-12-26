@@ -4,6 +4,12 @@ icon: "/icons/Traefik Proxy.svg"
 description: "A step-by-step guide to deploying Traefik as a reverse proxy locally using mkcert for SSL certificates."
 tags: ["Traefik", "mkcert", "Docker", "Reverse Proxy", "Load Balancer"] 
 ---
+## Introduction
+In this guide, we will walk through the steps to deploy Traefik, a popular open-source reverse proxy and load balancer, locally using mkcert to generate SSL certificates for secure HTTPS connections.
+
+## <Icon icon="/icons/mkcert.png" iconType="solid" /> Mkcert:
+mkcert is a simple tool that makes it easy to create locally-trusted development certificates. It automatically creates and installs a local CA in the system root store, and generates locally-trusted certificates. This is particularly useful for local development environments where you want to test HTTPS without dealing with self-signed certificates that browsers typically distrust.
+
 <Info>
 ## Prerequisites
   Before we begin, ensure you have the following prerequisites in place:
@@ -122,4 +128,4 @@ a. Open your web browser and navigate to `https://traefik.local` (or    your cho
 b. You should see the Traefik dashboard login prompt. Enter the username and password you configured in the `docker-compose.yml` file.
 c. Once logged in, you can monitor and manage your Traefik instance.
 ## Conclusion
-You have successfully deployed Traefik as a reverse proxy locally using mkcert for SSL certificates. You can now take advantage of Traefik's powerful features for managing your local applications securely.       
+You have successfully deployed Traefik locally using mkcert for SSL certificates. You can now take advantage of Traefik's powerful features for managing your local development environment securely over HTTPS.    
