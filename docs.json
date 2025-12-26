@@ -54,6 +54,7 @@
     },
     {
     "group": "Unified Communications",
+    "hidden": true,
     "icon": "/icons/container.svg",
     "pages": [
       "P-Container/docker",
@@ -73,6 +74,7 @@
     },
     {
       "group": "Getting started",
+      "hidden": true,
       "pages": [
         "quickstart",
         "development"
@@ -80,6 +82,7 @@
     },
     {
       "group": "Customization",
+      "hidden": true,
       "pages": [
         "essentials/settings",
         "essentials/navigation"
@@ -87,6 +90,7 @@
     },
     {
       "group": "Writing content",
+      "hidden": true,
       "pages": [
         "essentials/markdown",
         "essentials/code",
@@ -96,6 +100,7 @@
     },
     {
       "group": "AI tools",
+      "hidden": true,
       "pages": [
         "ai-tools/cursor",
         "ai-tools/claude-code",
