@@ -1,0 +1,104 @@
+---
+title: "Setting Up a Production-Ready API with Nginx and Let’s Encrypt"
+icon: "/icons/nginx.svg"
+description: "A comprehensive guide to deploying a production-ready API using Nginx as a reverse proxy and securing it with Let's Encrypt SSL certificates."
+tags: ["Nginx", "Let's Encrypt", "API", "Production", "Security"]
+keywords: ["Nginx", "Let's Encrypt", "API", "Production", "Security", "Reverse Proxy", "SSL Certificates"]
+--- 
+## Introduction
+Deploying a production-ready API requires careful consideration of security, scalability, and reliability. In this guide, we will walk through the steps to set up an API using Nginx as a reverse proxy and securing it with Let's Encrypt SSL certificates.
+## Prerequisites
+Before we begin, ensure you have the following prerequisites in place:
+- A server or virtual machine with a public IP address.
+- A domain name pointing to your server's IP address.
+- Basic knowledge of Linux command line and server administration.
+## Step 1: Install Nginx
+a. Update your package list and install Nginx:
+```bash
+sudo apt update
+sudo apt install nginx
+```
+b. Start and enable Nginx to run on boot:
+```bash
+sudo systemctl start nginx
+sudo systemctl enable nginx
+```
+## Step 2: Configure Nginx as a Reverse Proxy
+a. Create a new Nginx configuration file for your API:
+```bash
+sudo nano /etc/nginx/sites-available/myapi.conf
+```
+b. Add the following configuration to the file, replacing `your_domain` and `api_backend` with your actual domain name and backend API address:
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name hrmsapi.riad.com.bd www.hrmsapi.riad.com.bd;
+
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+        allow all;
+    }
+
+    location / {
+        proxy_pass http://localhost:8069;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+
+        proxy_connect_timeout 600s;
+        proxy_send_timeout 600s;
+        proxy_read_timeout 600s;
+        send_timeout 600s;
+    }
+
+    location ~ ^/web/database/(manager|selector) {
+        deny all;
+    }
+
+    location ~ ^/api/login {
+        allow all;
+    }
+}
+```
+c. Enable the new configuration by creating a symbolic link:    
+```bash
+sudo ln -s /etc/nginx/sites-available/myapi.conf /etc/nginx/sites-enabled/
+``` 
+d. Test the Nginx configuration for syntax errors:
+```bashsudo nginx -t
+```
+e. Reload Nginx to apply the changes:
+```bashsudo systemctl reload nginx
+```
+f. allow Nginx through the firewall:
+```bash
+sudo ufw allow 'Nginx Full'
+```
+## Step 3: Install Certbot and Obtain SSL Certificates
+a. Install Certbot and the Nginx plugin:
+```bash
+sudo apt install certbot python3-certbot-nginx
+```
+b. Obtain SSL certificates for your domain:
+```bash
+sudo certbot --nginx -d your_domain -d www.your_domain
+```
+c. Follow the prompts to complete the certificate installation. Certbot will automatically configure Nginx to use the obtained SSL certificates.
+## Step 4: Verify SSL Configuration
+a. Test your Nginx configuration again:
+```bash
+sudo nginx -t
+```
+b. Reload Nginx to apply the SSL configuration:
+```bash
+sudo systemctl reload nginx
+```
+c. Open your web browser and navigate to `https://your_domain`. You should see a secure connection indicated by a padlock icon in the address bar.
+## Conclusion
+You have successfully set up a production-ready API using Nginx as a reverse proxy and secured it with Let's Encrypt SSL certificates. Your API is now accessible over HTTPS, ensuring secure communication between clients
