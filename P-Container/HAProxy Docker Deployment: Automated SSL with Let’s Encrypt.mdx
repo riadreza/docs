@@ -1,0 +1,35 @@
+---
+title: "HAProxy Docker Deployment: Automated SSL with Let’s Encrypt"
+icon: "/icons/HAProxy.svg"
+description: "A comprehensive guide to deploying HAProxy in a Docker container with automated SSL certificate management using Let’s Encrypt."
+tags: ["HAProxy", "Docker", "SSL", "Let’s Encrypt"]
+--- 
+## Introduction
+In this guide, we will walk through the steps to deploy <Icon icon="/icons/HAProxy.svg" iconType="solid" />HAProxy, a reliable and high-performance open-source load balancer and reverse proxy, within a Docker container. We will also configure automated SSL certificate management using Let’s Encrypt to ensure secure HTTPS connections.
+<Info>
+  ## Prerequisites
+    Before we begin, ensure you have the following prerequisites in place:
+    - A server or virtual machine with Docker installed.
+    - A domain name pointing to your server's IP address.
+    - Basic knowledge of Docker and HAProxy.
+</Info>
+## Logical Diagram
+```plaintext
++-------------------+          +------------------+
+|                   |          |                  |
+|   Client Browser  +--------->|   HAProxy        |
+|                   |          |   Reverse Proxy  |
++-------------------+          +--------+---------+     
+                                        |
+                                        |
+                                +--------v---------+
+                                |                  |
+                                |   Backend Apps   |
+                                |                  |
+                                +------------------+            
+```         
+## Step 1: Create HAProxy Configuration File
+a. Create a directory for HAProxy configuration files:
+    ```bash
+    mkdir -p ~/haproxy/config
+    ```
