@@ -123,8 +123,20 @@ e. Start the Traefik container using Docker Compose:
     ```bash
     docker-compose -f docker-compose.yml up -d
     ```
+## 3. Autometic Renewal of mkcert Certificates
+mkcert certificates do not have an automatic renewal mechanism like Let's Encrypt. However, you can set up a cron job to regenerate the certificates periodically. Here's how you can do it:
+a. Open the crontab file for editing:
+```bash 
+crontab -e
+```
+b. Add the following line to regenerate the certificates every 90 days (adjust the path and domain as needed):
+```bash
+0 0 */90 * * /usr/local/bin/mkcert -cert-file /path/to/traefik-data/certs/cert.pem -key-file /path/to/traefik-data/certs/key.pem traefik.local
+```
+c. Save and exit the crontab editor. This will ensure that your mkcert certificates are regenerated every 90 days.
+
 ## Step 3: Access the Traefik Dashboard
-a. Open your web browser and navigate to `https://traefik.local` (or    your chosen local domain).  
+a. Open your web browser and navigate to `https://traefik.local` (or your chosen local domain). 
 b. You should see the Traefik dashboard login prompt. Enter the username and password you configured in the `docker-compose.yml` file.
 c. Once logged in, you can monitor and manage your Traefik instance.
 ## Conclusion
