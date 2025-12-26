@@ -1,0 +1,71 @@
+Deploy Traefik locally with mkcert
+<Info>
+## Prerequisites
+  Before we begin, ensure you have the following prerequisites in place:
+  - A local machine with Docker installed.
+  - mkcert installed for generating local SSL certificates.
+  - Basic knowledge of Docker and Traefik.
+</Info>
+## Logical Diagram
+```plaintext
++-------------------+          +------------------+
+|                   |          |                  |
+|   Client Browser  +--------->|   Traefik        |
+|                   |          |   Reverse Proxy  |
++-------------------+          +--------+---------+     
+                                        |
+                                        |
+                                +--------v---------+
+                                |                  |
+                                |   Backend Apps   |
+                                |                  |
+                                +------------------+            
+    ```     
+## Step 1: Generate Local SSL Certificates with mkcert
+a. Install mkcert if you haven't already. Follow the instructions on the [mkcert GitHub page](https://github.com/FiloSottile/mkcert).
+b. Generate a local CA (Certificate Authority):
+    ```bash
+    mkcert -install
+    ```
+c. Create SSL certificates for your local domain (e.g., `traefik.local`):
+    ```bash
+    mkcert traefik.local
+    ```
+d. This will generate two files: `traefik.local.pem` (certificate) and      `traefik.local-key.pem` (private key).
+## Step 2: Deploy Traefik with Docker
+a. Create a `docker-compose.yml` file to define the Traefik service:
+    ```yaml     
+    # Define the services to be run by Docker Compose
+    services:
+      traefik:
+        image: traefik:v3.4  # Use Traefik version 3    .4 image
+        container_name: traefik  # Name the container "traefik"
+        restart: unless-stopped  # Always restart unless explicitly stopped     
+        security_opt:
+          - no-new-privileges:true  # Prevent container from gaining new privileges
+        ports:
+          - "80:80"    # Expose HTTP on port 80
+          - "443:443"  # Expose HTTPS on port 443
+        volumes:
+            - ./traefik-data/acme.json:/acme.json
+            # Make sure acme.json exists, is chmod 600, and owned by the Traefik user to avoid permission errors.
+            - ./traefik-data/traefik.yml:/etc/traefik/traefik.yml  # Traefik static configuration file
+            - ./path/to/traefik.local.pem:/certs/traefik.local.pem  # Local SSL certificate     
+            - ./path/to/traefik.local-key.pem:/certs/traefik.local-key.pem  # Local SSL private key
+        networks:
+          - web  # Attach to the external "web" network
+        labels:    
+            - "traefik.enable=true"  # Enable Traefik for this container
+            # Dashboard configuration
+            - "traefik.http.routers.dashboard.rule=Host(`traefik.local`)"  # Dashboard accessible at this domain
+            - "traefik.http.routers.dashboard.service=api@internal"  # Use Traefik's internal API service
+            - "traefik.http.routers.dashboard.tls=true"  # Enable TLS for the dashboard
+            - "traefik.http.routers.dashboard.tls.certresolver=local"  # Use local certificate resolver for certificates
+    networks:
+      web:
+        external: true
+    ```
+b. Create a `traefik.yml` file for Traefik's static configuration:
+    ```yaml
+    api:
+      dashboard: true
