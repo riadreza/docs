@@ -42,35 +42,84 @@ a. Create a `docker-compose.yml` file to define the Traefik service:
     ```yaml     
     # Define the services to be run by Docker Compose
     services:
-      traefik:
-        image: traefik:v3.4  # Use Traefik version 3    .4 image
-        container_name: traefik  # Name the container "traefik"
-        restart: unless-stopped  # Always restart unless explicitly stopped     
+    traefik:
+        image: traefik:v3.4
+        container_name: traefik # Name the container "traefik"
+        restart: unless-stopped # Always restart unless explicitly stopped
         security_opt:
-          - no-new-privileges:true  # Prevent container from gaining new privileges
+        - no-new-privileges:true # Prevent container from gaining new privileges
         ports:
-          - "80:80"    # Expose HTTP on port 80
-          - "443:443"  # Expose HTTPS on port 443
-        volumes:
-            - ./traefik-data/acme.json:/acme.json
-            # Make sure acme.json exists, is chmod 600, and owned by the Traefik user to avoid permission errors.
-            - ./traefik-data/traefik.yml:/etc/traefik/traefik.yml  # Traefik static configuration file
-            - ./path/to/traefik.local.pem:/certs/traefik.local.pem  # Local SSL certificate     
-            - ./path/to/traefik.local-key.pem:/certs/traefik.local-key.pem  # Local SSL private key
+        - "80:80"
+        - "443:443"
         networks:
-          - web  # Attach to the external "web" network
-        labels:    
-            - "traefik.enable=true"  # Enable Traefik for this container
-            # Dashboard configuration
-            - "traefik.http.routers.dashboard.rule=Host(`traefik.local`)"  # Dashboard accessible at this domain
-            - "traefik.http.routers.dashboard.service=api@internal"  # Use Traefik's internal API service
-            - "traefik.http.routers.dashboard.tls=true"  # Enable TLS for the dashboard
-            - "traefik.http.routers.dashboard.tls.certresolver=local"  # Use local certificate resolver for certificates
+        - web
+        volumes:
+        - /var/run/docker.sock:/var/run/docker.sock:ro # Docker socket for Traefik to monitor containers
+        - /opt/traefik/traefik.yml:/etc/traefik/traefik.yml # Traefik static configuration file
+        - /opt/traefik/certs:/etc/traefik/certs # Directory for SSL certificates
+        labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.traefik-dashboard.rule=Host('local domain name/localhost`)" # Replace with your local domain
+        - "traefik.http.routers.traefik-dashboard.entrypoints=websecure" # Use the "websecure" entrypoint (usually port 443)
+        - "traefik.http.routers.traefik-dashboard.tls=true" # Enable TLS for the dashboard
+        - "traefik.http.routers.traefik-dashboard.tls
+        - "traefik.http.routers.traefik-dashboard.service=api@internal"
+        - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$XXXXXXXX"
+        - "traefik.http.routers.traefik-dashboard.middlewares=dashboard-auth@docker"
+
+
     networks:
-      web:
+    web:
         external: true
+    
     ```
-b. Create a `traefik.yml` file for Traefik's static configuration:
+b. Now, create a `traefik.yml` file in that `traefik-data` directory. This file will contain the static configuration for Traefik:
+    ```bash
+    sudo touch traefik-data/traefik.yml
+    ```
+c. Add the following configuration to the `traefik.yml` file:
     ```yaml
+    entryPoints:
+    web:
+        address: ":80"
+        http:
+        redirections:
+            entryPoint:
+            to: websecure
+            scheme: https
+    websecure:
+        address: ":443"
+
     api:
-      dashboard: true
+    dashboard: true
+    insecure: false
+
+    providers:
+    docker:
+        endpoint: "unix:///var/run/docker.sock"
+        exposedByDefault: false
+
+    tls:
+    certificates:
+        - certFile: "/etc/traefik/certs/cert.pem"
+        keyFile: "/etc/traefik/certs/key.pem"
+
+    log:
+    level: DEBUG
+    ```
+d. Place the generated SSL certificate and key files into the `certs` directory:
+    ```bash
+    sudo mkdir -p traefik-data/certs
+    sudo mv traefik.local.pem traefik-data/certs/cert.pem
+    sudo mv traefik.local-key.pem traefik-data/certs/key.pem
+    ```
+e. Start the Traefik container using Docker Compose:
+    ```bash
+    docker-compose -f docker-compose.yml up -d
+    ```
+## Step 3: Access the Traefik Dashboard
+a. Open your web browser and navigate to `https://traefik.local` (or    your chosen local domain).  
+b. You should see the Traefik dashboard login prompt. Enter the username and password you configured in the `docker-compose.yml` file.
+c. Once logged in, you can monitor and manage your Traefik instance.
+## Conclusion
+You have successfully deployed Traefik as a reverse proxy locally using mkcert for SSL certificates. You can now take advantage of Traefik's powerful features for managing your local applications securely.       
