@@ -40,7 +40,7 @@
       "P-Container/docker",
       {
         "group": "Docker Projects",
-        "icon": "/icons/docker project.png",
+        "icon": "/icons/docker project.svg",
         "expanded": false,
         "pages": ["P-Container/deploy Traefik and configure with Cloudflare",
                   "P-Container/Deploy Traefik locally with mkcert"
