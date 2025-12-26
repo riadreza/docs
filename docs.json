@@ -38,7 +38,6 @@
     "icon": "/icons/container.svg",
     "pages": [
       "P-Container/docker",
-      "P-Container/docker troubleshooting",
       {
         "group": "Docker Projects",
         "icon": "/icons/docker project.svg",
@@ -48,6 +47,7 @@
                   "P-Container/HAProxy Docker Deployment: Automated SSL with Let’s Encrypt"
         ]
       },
+      "P-Container/docker troubleshooting",
       {
         "group": "Container Orchestration",
         "expanded": false,
