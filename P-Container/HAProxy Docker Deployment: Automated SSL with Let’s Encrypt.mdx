@@ -234,7 +234,7 @@ c. Verify that the containers are running:
     ```     
 You should see both `haproxy` and `certbot` containers listed as running.   
 ## Step 5: Access HAProxy Stats Dashboard
-a. Open your web browser and navigate to `http://your-server-ip:8080/stats`.
-b. You should see the HAProxy statistics dashboard. Log in using the credentials specified in the `haproxy.cfg` file (username: admin, password: XXXXXXXX).
+1. Open your web browser and navigate to `http://your-server-ip:8080/stats`.
+2. You should see the HAProxy statistics dashboard. Log in using the credentials specified in the `haproxy.cfg` file (username: admin, password: XXXXXXXX).
 ## Conclusion   
 You have successfully deployed HAProxy in a Docker container with automated SSL certificate management using Let’s Encrypt. HAProxy is now set up to handle incoming HTTPS requests, route them to your backend services, and automatically renew SSL certificates as needed. You can monitor HAProxy's performance and traffic through the stats dashboard.
