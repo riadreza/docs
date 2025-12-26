@@ -6,6 +6,15 @@ tags: ["HAProxy", "Docker", "SSL", "Let’s Encrypt"]
 --- 
 ## Introduction
 In this guide, we will walk through the steps to deploy <Icon icon="/icons/haproxy.svg" iconType="solid" />HAProxy, a reliable and high-performance open-source load balancer and reverse proxy, within a Docker container. We will also configure automated SSL certificate management using Let’s Encrypt to ensure secure HTTPS connections.
+##HAProxy and Let’s Encrypt:
+HAProxy is widely used in production environments for its robustness, scalability, and advanced load balancing capabilities. It efficiently distributes incoming traffic across multiple backend servers, enhancing application performance and reliability.
+Let’s Encrypt is a free, automated, and open certificate authority that provides SSL/TLS certificates to enable HTTPS on websites. By integrating Let’s Encrypt with HAProxy, we can automate the process of obtaining and renewing SSL certificates, ensuring that our applications remain secure without manual intervention.
+
+## Overview of the Deployment:
+In this deployment, we will set up HAProxy as a reverse proxy in a Docker container. HAProxy will handle incoming HTTPS requests, route them to the appropriate backend services, and manage SSL certificates using Let’s Encrypt. The deployment will include the following key components:
+- HAProxy Docker Container: The core component that will run HAProxy and manage traffic routing.
+- Let’s Encrypt Integration: Automated SSL certificate issuance and renewal using the ACME protocol.
+- Backend Services: The applications or services that HAProxy will route traffic to.      
 <Info>
   ## Prerequisites
     Before we begin, ensure you have the following prerequisites in place:
