@@ -38,6 +38,7 @@
     "icon": "/icons/container.svg",
     "pages": [
       "P-Container/docker",
+      "P-Container/docker troubleshooting",
       {
         "group": "Docker Projects",
         "icon": "/icons/docker project.svg",
