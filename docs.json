@@ -39,7 +39,7 @@
     "pages": [
       "P-Container/docker",
       {
-        "group": "Docker Workouts",
+        "group": "Docker Projects",
         "expanded": false,
         "pages": ["P-Container/deploy Traefik and configure with Cloudflare",
                   "P-Container/Deploy Traefik locally with mkcert"
