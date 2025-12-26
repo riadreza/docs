@@ -41,8 +41,9 @@
       {
         "group": "Docker Workouts",
         "expanded": false,
-        "pages": ["P-Container/deploy Traefik and configure with Cloudflare"
-      ]
+        "pages": ["P-Container/deploy Traefik and configure with Cloudflare",
+                  "P-Container/Deploy Traefik locally with mkcert"
+        ]
       },
       {
         "group": "Container Orchestration",
