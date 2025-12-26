@@ -1,0 +1,87 @@
+---
+title: "Deploying Nginx Proxy Manager: Centralized SSL & Reverse Proxy in Docker"
+icon: "/icons/nginx.svg"
+description: "A comprehensive guide to deploying Nginx Proxy Manager in Docker for managing SSL certificates and reverse proxying."
+tags: ["Nginx", "Proxy Manager", "Docker", "SSL", "Reverse Proxy"]
+keywords: ["Nginx", "Proxy Manager", "Docker", "SSL", "Reverse Proxy", "Let's Encrypt"]
+---
+## Introduction
+Nginx Proxy Manager is a powerful tool that simplifies the management of Nginx reverse proxies and SSL certificates. In this guide, we will walk through the steps to deploy Nginx Proxy Manager in Docker, allowing you to easily manage your web applications and secure them with SSL certificates from Let's Encrypt.
+
+## Nginx Proxy Manager Features
+- User-friendly web interface for managing Nginx configurations.
+- Automated SSL certificate issuance and renewal with Let's Encrypt.
+- Support for multiple proxy hosts, redirections, and streams.
+- Access control and authentication for secure management.
+<Info>
+## Prerequisites
+Before we begin, ensure you have the following prerequisites in place:
+- A server or virtual machine with Docker installed.
+- Basic knowledge of Docker and Nginx.
+</Info>
+## Step 1: Create Docker Compose File
+a. Create a directory for Nginx Proxy Manager and navigate into it:
+```bash
+mkdir nginx-proxy-manager
+cd nginx-proxy-manager
+```
+b. Create a `docker-compose.yml` file with the following content:
+    ```yaml
+    services:
+    app:
+        image: 'jc21/nginx-proxy-manager:latest'
+        restart: unless-stopped
+        ports:
+        # These ports are in format <host-port>:<container-port>
+        - '80:80' # Public HTTP Port
+        - '1443:443' # Public HTTPS Port
+        - '81:81' # Admin Web Port
+        # Add any other Stream port you want to expose
+        # - '21:21' # FTP
+        environment:
+        # Mysql/Maria connection parameters:
+        DB_MYSQL_HOST: "db"
+        DB_MYSQL_PORT: 3306
+        DB_MYSQL_USER: "npm"
+        DB_MYSQL_PASSWORD: "npm"
+        DB_MYSQL_NAME: "npm"
+        # Uncomment this if IPv6 is not enabled on your host
+        # DISABLE_IPV6: 'true'
+        volumes:
+        - ./data:/data
+        - ./letsencrypt:/etc/letsencrypt
+        depends_on:
+        - db
+
+    db:
+        image: 'jc21/mariadb-aria:latest'
+        restart: unless-stopped
+        environment:
+        MYSQL_ROOT_PASSWORD: 'npm'
+        MYSQL_DATABASE: 'npm'
+        MYSQL_USER: 'npm'
+        MYSQL_PASSWORD: 'npm'
+        volumes:
+        - ./mysql:/var/lib/mysql
+    ```
+## Step 2: Start Nginx Proxy Manager
+In the terminal, run the following command to start Nginx Proxy Manager using Docker Compose:
+```bash
+docker-compose up -d
+```
+This command will download the necessary images, create the containers, and start the services defined in your  `docker-compose.yml` file.  
+## Step 3: Access Nginx Proxy Manager Web Interface
+1. Open your web browser and navigate to `http://your-server-ip:81`.
+2. Log in using the default credentials:
+   - Email: `admin@example.com`
+   - Password: `changeme`
+3. Change the default email and password upon first login for security.
+## Step 4: Configure Proxy Hosts and SSL Certificates
+1. In the Nginx Proxy Manager dashboard, navigate to the "Proxy Hosts" section.
+2. Click on "Add Proxy Host" to create a new proxy host.
+3. Fill in the details for your proxy host, including the domain name, scheme (HTTP/HTTPS), and the IP address and port of the backend service.
+4. To enable SSL, check the "Block Common Exploits" and "Websockets Support" options as needed.
+5. Under the "SSL" tab, select "Request a new SSL Certificate" and agree to the Let's Encrypt terms of service.
+6. Click "Save" to create the proxy host with SSL enabled.
+## Conclusion
+You have successfully deployed Nginx Proxy Manager in Docker and configured it to manage your web applications with SSL certificates from Let's Encrypt. You can now easily add, manage, and secure multiple proxy hosts through the user-friendly web interface. For further customization and advanced configurations, refer to the [Nginx Proxy Manager documentation](https://nginxproxymanager.com/).
