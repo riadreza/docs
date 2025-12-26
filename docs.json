@@ -25,7 +25,7 @@
         "group": "Linux Projects",
         "icon": "/icons/linux project.svg",
         "expanded": false,
-        "pages": ["P-Linux/Setting Up a Production-Ready API with Nginx and Let’s Encrypt.mdx"
+        "pages": ["P-Linux/Setting Up a Production-Ready API with Nginx and Let’s Encrypt"
         ]
       },
       {
