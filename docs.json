@@ -50,7 +50,7 @@
         "icon": "/icons/docker project.svg",
         "expanded": false,
         "pages": ["P-Container/deploy-Traefik-and-configure-with-Cloudflare",
-                  "P-Container/Deploy Traefik locally with mkcert",
+                  "P-Container/Deploy-Traefik-locally-with-mkcert",
                   "P-Container/HAProxy-Docker-Deployment-Automated-SSL-with-Lets-Encrypt",
                   "P-Container/Deploying-Nginx-Proxy-Manager-Centralized-SSL-Reverse-Proxy-in-Docker"
         ]
