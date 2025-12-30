@@ -25,7 +25,7 @@
         "group": "Linux Projects",
         "icon": "/icons/linux project.svg",
         "expanded": false,
-        "pages": ["P-Linux/Setting Up a Production-Ready API with Nginx and Let’s Encrypt"
+        "pages": ["P-Linux/Setting-Up-a-Production-Ready-API-with-Nginx-and-Lets-Encrypt"
         ]
       },
       {
@@ -49,10 +49,10 @@
         "group": "Docker Projects",
         "icon": "/icons/docker project.svg",
         "expanded": false,
-        "pages": ["P-Container/deploy Traefik and configure with Cloudflare",
+        "pages": ["P-Container/deploy-Traefik-and-configure-with-Cloudflare",
                   "P-Container/Deploy Traefik locally with mkcert",
-                  "P-Container/HAProxy Docker Deployment: Automated SSL with Let’s Encrypt",
-                  "P-Container/Deploying Nginx Proxy Manager: Centralized SSL & Reverse Proxy in Docker"
+                  "P-Container/HAProxy-Docker-Deployment-Automated-SSL-with-Lets-Encrypt",
+                  "P-Container/Deploying-Nginx-Proxy-Manager-Centralized-SSL-Reverse-Proxy-in-Docker"
         ]
       },
       "P-Container/docker troubleshooting",
