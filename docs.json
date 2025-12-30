@@ -55,7 +55,7 @@
                   "P-Container/Deploying-Nginx-Proxy-Manager-Centralized-SSL-Reverse-Proxy-in-Docker"
         ]
       },
-      "P-Container/docker troubleshooting",
+      "P-Container/docker-troubleshooting",
       {
         "group": "Container Orchestration",
         "expanded": false,
