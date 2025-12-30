@@ -52,7 +52,8 @@
         "pages": ["P-Container/deploy-Traefik-and-configure-with-Cloudflare",
                   "P-Container/Deploy-Traefik-locally-withmk-cert",
                   "P-Container/HAProxy-Docker-Deployment-Automated-SSL-with-Lets-Encrypt",
-                  "P-Container/Deploying-Nginx-Proxy-Manager-Centralized-SSL-Reverse-Proxy-in-Docker"
+                  "P-Container/Deploying-Nginx-Proxy-Manager-Centralized-SSL-Reverse-Proxy-in-Docker",
+                  "P-Container/deploying-fumadoc-in-docker-and-connecting-to-github"
         ]
       },
       "P-Container/docker-troubleshooting",
