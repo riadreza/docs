@@ -3,14 +3,182 @@ title: "Deploying fumadoc in docker and connecting to github actions"
 icon: "/icons/fumadocs.svg"
 description: "A step-by-step guide to deploying FumaDoc in Docker and connecting it to GitHub Actions for automated documentation generation."
 tags: ["FumaDoc", "Docker", "GitHub Actions", "Documentation Automation"]   
-keywords: ["FumaDoc", "Docker", "GitHub Actions", "Documentation Automation", "CI/CD"]
+keywords: ["FumaDocs", "Docker", "GitHub Actions", "Documentation Automation", "CI/CD"]
 ---
 ## Introduction
-In this guide, we will walk through the steps to deploy <Icon icon="/icons/FumaDoc.svg" iconType="solid" />FumaDoc, an open-source documentation generator, in a Docker container and connect it to GitHub Actions for automated documentation generation and deployment.
+FumaDoc is a powerful tool for generating documentation from your codebase. By deploying FumaDoc in a Docker container and integrating it with GitHub Actions, you can automate the process of documentation generation every time you push changes to your repository. This guide will walk you through the steps to set up FumaDoc in Docker and connect it to GitHub Actions.  
 <Info>
-  ## Prerequisites
-    Before we begin, ensure you have the following prerequisites in place:
-    - A GitHub repository where you want to host your documentation.
-    - Docker installed on your local machine or server.
-    - Basic knowledge of Docker and GitHub Actions. 
+## Prerequisites
+Before you begin, ensure you have the following prerequisites: 
+- Docker installed on your local machine or server.
+- A GitHub repository where you want to generate documentation.
+- Basic knowledge of Docker and GitHub Actions.
 </Info>
+## Project Overview
+In this guide, we will cover the following steps: 
+1. Setting up a Docker container for FumaDoc.
+2. Configuring GitHub Actions to trigger FumaDoc documentation generation.  
+3. Testing the setup to ensure everything works as expected.
+## Project Structure
+Here is an overview of the project structure we will be working with:
+```.plaintext
+fumadocs/
+├─ app/
+├─ content/
+├─ public/
+├─ package.json
+├─ next.config.mjs
+├─ Dockerfile
+└─ .github/workflows/deploy-fumadocs.yml
+``` 
+## Step 1: Setting Up Docker for FumaDoc
+First, we need to create a Dockerfile to set up the FumaDoc environment. Create a file named `Dockerfile` in the root of your project with the following content:
+```Dockerfile 
+# Stage 1: Builder
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Stage 2: Runner
+FROM node:20-alpine AS runner
+WORKDIR /app
+COPY --from=builder /app/.next /app/.next
+COPY --from=builder /app/public /app/public
+COPY --from=builder /app/package.json /app/package.json
+CMD ["node", ".next/standalone/server.js"]
+EXPOSE 3000
+``` 
+This Dockerfile uses a multi-stage build to first install dependencies and build the FumaDoc application, and then create a lightweight runtime image.
+## Step 2: Building and Running the Docker Container
+To build and run the Docker container, use the following commands in your terminal:
+```bash
+docker build -t fumadoc .
+docker run -p 3000:3000 fumadoc
+```
+## Step 3: run docker compose
+Create a `docker-compose.yml` file in the root of your project with the following content:
+```yaml 
+version: '3.8'
+services:
+  fumadoc:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    command: npm start
+```
+To start the FumaDoc service using Docker Compose, run:
+```bash
+docker-compose up -d
+``` 
+## Step 4: Configuring GitHub Actions
+Next, we will set up a GitHub Actions workflow to automate the documentation generation process. Create
+  a file named `deploy-fumadocs.yml` in the `.github/workflows/` directory of your repository with the following content:
+  ```yaml
+name: Deploy FumaDocs
+  on:
+  push:
+    branches:
+      - main
+    paths:
+      - content/**
+      - app/**
+      - next.config.mjs
+      - package.json
+      - Dockerfile
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/riadreza/fumadocs
+      TAG: latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/riadreza/fumadocs:latest
+            ghcr.io/riadreza/fumadocs:${{ github.sha }}
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }}
+            docker pull ghcr.io/riadreza/fumadocs:latest
+            docker compose -f /opt/fumadocs/docker-fumadoc.yml up -d --force-recreate
+            docker image prune -f
+```
+This workflow will trigger on pushes to the `main` branch and will build and push the Docker image to GitHub Container Registry, then deploy it to your server via SSH.
+## Step 5: Secrets required for GitHub Actions
+To securely connect to your server and GitHub Container Registry, you need to add the following secrets to your GitHub repository:
+- `GHCR_TOKEN`: A personal access token with `write:packages` scope for GitHub Container Registry.
+- `SERVER_HOST`: The IP address or hostname of your server.
+- `SERVER_USER`: The SSH username for your server.
+- `SERVER_SSH_KEY`: The private SSH key for accessing your server.
+## Step 6: Testing the Setup
+After setting up the Docker container and GitHub Actions workflow, push a change to your repository to trigger the workflow. Monitor the Actions tab in your GitHub repository to ensure the workflow runs successfully and deploys FumaDoc to your server.
+## Step 7: Accessing FumaDoc
+Once the deployment is complete, you can access FumaDoc by navigating to `http://<your-server-ip>:3000` in your web browser.
+## Step 8: Adding pages to FumaDoc
+To add new documentation pages to FumaDoc, simply create markdown files in the `content/` directory of your project. FumaDoc will automatically generate documentation based on the content of these files.
+## Conclusion 
+By following this guide, you have successfully deployed FumaDoc in a Docker container and connected it to GitHub Actions for automated documentation generation. This setup will help streamline your documentation process and ensure that your documentation is always up-to-date with the latest changes in your codebase. Happy documenting!    
+## Additional Resources
+- [FumaDoc Documentation](https://fumadocs.example.com/docs)
+- [Docker Documentation](https://docs.docker.com/)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+## Troubleshooting
+If you encounter any issues during the setup process, consider the following troubleshooting tips:  
+- Ensure that Docker is properly installed and running on your machine or server.
+- Verify that your GitHub Actions workflow has the correct permissions and secrets configured.
+- Check the logs of your GitHub Actions workflow for any error messages that can help identify the issue.
+- Make sure that your server is accessible via SSH and that the provided credentials are correct.
+## FAQ
+**Q: Can I customize the FumaDoc Docker image?**
+A: Yes, you can modify the Dockerfile to include additional dependencies or configurations as needed for your specific use case.
+
+**Q: How often will the documentation be updated?**
+A: The documentation will be updated every time you push changes to the specified branches in your Git
+Hub repository. 
+**Q: Can I deploy FumaDoc to other cloud providers?**
+A: Yes, you can deploy the Docker container to any cloud provider that supports Docker, such as AWS, Azure, or Google Cloud Platform. Just ensure that your server is properly configured to run Docker containers. 
+## Feedback
+We would love to hear your feedback on this guide! If you have any suggestions for improvements or    additional topics you would like to see covered, please reach out to us at [riadreza41t@gmail.com].
+
+---
+## Author
+Riad Reza 
+- [GitHub](www.github.com/riadreza)
+- [Twitter](www.twitter.com/riadreza)
+--- 
+## License
+This guide is licensed under the [MIT License](https://opensource.org/licenses/MIT). Feel free to use, modify, and distribute it as needed.   
