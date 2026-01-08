@@ -33,6 +33,13 @@
         "icon": "/icons/linux distro.svg",
         "expanded": false,
         "pages": ["P-Linux/ubuntu",
+                  {
+        "group": "Linux Projects",
+        "icon": "/icons/linux project.svg",
+        "expanded": false,
+        "pages": ["P-Linux/complete-ubuntu-vm-setup-with-lvm-storage-and-nfs-shares"
+        ]
+      },
                   "P-Linux/fedora",
                   "P-Linux/debian",
                   "P-Linux/arch"
