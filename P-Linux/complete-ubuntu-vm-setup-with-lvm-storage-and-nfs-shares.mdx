@@ -105,3 +105,39 @@ It will append the fstab file with the new entry. and command output like below:
 sudo apt update
 sudo apt install nfs-kernel-server -y
 ```
+2. Check the status of NFS server:
+```bash
+sudo systemctl status nfs-kernel-server
+```
+3. Configure NFS exports by editing the `/etc/exports` file:
+```bash
+echo '/mnt/nfs-share 192.168.12.0/255.255.255.0(rw,sync,no_subtree_check)' | sudo tee -a /etc/exports
+```
+This command will append the exports file with the new NFS share configuration. The output will be:
+```plaintext
+/mnt/nfs-share 192.168.12.0/255.255.255.0(rw,sync,no_subtree_check)
+```
+4. Apply the export changes:
+```bash
+sudo exportfs -ra
+sudo systemctl restart nfs-kernel-server
+```
+5. Adjust firewall settings to allow NFS traffic (if applicable):
+```bash
+sudo ufw allow from 192.168.12.0/24 to any port nfs
+```
+6. Verify NFS exports:
+```bash
+showmount -e localhost
+```
+You should see output similar to:
+```plaintext
+Export list for localhost:
+/mnt/nfs-share 192.168.12.0/255.255.255.0
+```
+## Connect from Client Machine
+1. On the client machine, install NFS client packages:
+```bash
+sudo apt update
+sudo apt install nfs-common -y
+```
