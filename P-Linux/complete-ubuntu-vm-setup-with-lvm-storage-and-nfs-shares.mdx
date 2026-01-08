@@ -34,8 +34,9 @@ sudo systemctl restart sshd
 ```
 ## Step 3: Install root CA certificates in the trust store
 1. Copy the root CA certificate file (e.g., `my-ca.crt`) to the `/usr/local/share/ca-certificates/` directory.
-```bashsudo cp my-ca.crt /usr/local/share/ca-certificates/
-``` 
+```bash
+sudo cp my-ca.crt /usr/local/share/ca-certificates/
+```
 2. Update the CA certificates:
 ```bash 
 sudo update-ca-certificates
