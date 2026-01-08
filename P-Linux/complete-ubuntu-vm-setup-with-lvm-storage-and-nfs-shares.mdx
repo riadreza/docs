@@ -86,3 +86,22 @@ log      =internal log           bsize=4096   blocks=38400, version=2
 realtime =none                   extsz=4096   blocks=0, rtextents=0
 Discarding blocks...Done.
 ```
+5. Create a mount point and mount the LV:
+```bash
+sudo mkdir -p /mnt/nfs-share
+sudo mount /dev/ubuntu-vg/nfs-share /mnt/nfs-share
+```
+6. To make the mount persistent across reboots, add an entry to `/etc/fstab`:
+```bash
+echo '/dev/ubuntu-vg/nfs-share /mnt/nfs-share xfs defaults 0 0' | sudo tee -a /etc/fstab
+```
+It will append the fstab file with the new entry. and command output like below:
+```plaintext
+/dev/ubuntu-vg/nfs-share /mnt/nfs-share xfs defaults 0 0
+```
+## Step 5: Setting Up NFS Shares
+1. Install NFS server packages:
+```bash
+sudo apt update
+sudo apt install nfs-kernel-server -y
+```
