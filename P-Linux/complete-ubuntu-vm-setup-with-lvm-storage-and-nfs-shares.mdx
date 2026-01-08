@@ -21,3 +21,14 @@ Before you begin, ensure you have the following prerequisites:
 4. Follow the on-screen instructions to install Ubuntu, ensuring you set up a user account and password.
 5. In the installation process keep the unallocated or free space as it is.
 6. Complete the installation and reboot the VM.
+## Step 2: Enable remote root access:
+1. Open a terminal in your Ubuntu VM.
+2. use below command to set root password
+```bash
+sudo passwd root
+```
+3. Command to enable remote root login
+```bash
+sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+sudo systemctl restart sshd
+```
