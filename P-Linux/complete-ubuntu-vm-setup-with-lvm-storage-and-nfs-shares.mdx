@@ -42,3 +42,21 @@ sudo cp my-ca.crt /usr/local/share/ca-certificates/
 sudo update-ca-certificates
 ```
 ## Step 4: Setting Up LVM Storage
+1. Show the availabls space using below command
+```bash
+vgs
+```
+you will see the free space in the VG like below:
+```plaintext
+   VG        #PV #LV #SN Attr   VSize    VFree
+  ubuntu-vg   1   1   0 wz--n- <498.00g <398.00g
+```
+2. to see the absolute free space use below command
+```bash
+pvs 
+```
+you will see the free space in the PV like below:
+```plaintext
+  PV         VG        Fmt  Attr PSize    PFree
+  /dev/sda3  ubuntu-vg lvm2 a--  <498.00g <398.00g
+```
