@@ -60,3 +60,29 @@ you will see the free space in the PV like below:
   PV         VG        Fmt  Attr PSize    PFree
   /dev/sda3  ubuntu-vg lvm2 a--  <498.00g <398.00g
 ```
+3. Create a new logical volume (LV) using the free space:
+```bash
+sudo lvcreate -L 300G -n nfs-share ubuntu-vg # Replace '300G' with the desired size and 'nfs-share' with your LV name
+```
+It will create a LV named nfs-share with 300GB size. give the terminal output like below:
+```plaintext
+  Logical volume "nfs-share" created.
+```
+4. Format the new LV with a filesystem (e.g., xfs):
+```bash
+sudo mkfs.xfs /dev/ubuntu-vg/nfs-share # Replace with your LV path  
+```
+you will see the terminal output like below:
+```plaintext
+meta-data=/dev/ubuntu-vg/nfs-share isize=512    agcount=4, agsize=19660800 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=1, rmapbt=1
+         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=0
+data     =                       bsize=4096   blocks=78643200, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+log      =internal log           bsize=4096   blocks=38400, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+Discarding blocks...Done.
+```
