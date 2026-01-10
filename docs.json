@@ -79,14 +79,7 @@
     "icon": "/icons/automation-tools.svg",
     "expanded": false,
     "pages": [
-      "P-Container/Automation-Tools",
-      {
-        "group": "Docker Workouts",
-        "hidden": true,
-        "expanded": false,
-        "pages": ["P-Container/deploy Traefik and configure with Cloudflare"
-      ]
-      }
+      "P-Automation-tools/Automation-Tools"
     ]
     },
     {
