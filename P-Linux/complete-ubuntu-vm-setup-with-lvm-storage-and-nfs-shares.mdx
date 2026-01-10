@@ -229,10 +229,98 @@ sudo ufw reload
 Replace `<CLIENT_IP_OR_SUBNET>` with the actual IP address or subnet of the client machines.
 ## Extend the LVM Storage (if needed)
 If you need to extend the LVM storage in the future, follow these steps:
-1. Check the available free space in the volume group:
+1. Ad disk to the VM through your virtualization platform.
+2. Run lsblk to identify the new disk (e.g., /dev/sdb).
 ```bash
-vgs
+lsblk
 ```
+You should see output similar to:
+```plaintext
+root@nfs:~# lsblk
+NAME                      MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sda                         8:0    0  500G  0 disk
+├─sda1                      8:1    0    1M  0 part
+├─sda2                      8:2    0    2G  0 part /boot
+└─sda3                      8:3    0  498G  0 part
+  ├─ubuntu--vg-ubuntu--lv 252:0    0  100G  0 lvm  /
+  └─ubuntu--vg-nfs--share 252:1    0  300G  0 lvm  /mnt/nfs-share
+sdb                         8:16   0  500G  0 disk
+sr0                        11:0    1 1024M  0 rom
+```
+3. Create a physical volume (PV) on the new disk:
+```bash
+sudo pvcreate /dev/sdb
+```
+You should see output similar to:
+```plaintext
+  Physical volume "/dev/sdb" successfully created.
+```
+4. Extend the existing volume group (VG) to include the new PV:
+```bash
+sudo vgextend ubuntu-vg /dev/sdb
+```
+You should see output similar to:
+```plaintext
+  Volume group "ubuntu-vg" successfully extended
+```
+5. Extend the logical volume (LV) to use the additional space:
+```bash
+sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/nfs-share # Replace with your LV path
+```
+You should see output similar to:
+```plaintext
+Size of logical volume ubuntu-vg/nfs-share changed from 300.00 GiB (76800 extents) to 897.99 GiB (229886 extents).
+  Logical volume ubuntu-vg/nfs-share successfully resized.
+meta-data=/dev/mapper/ubuntu--vg-nfs--share isize=512    agcount=4, agsize=19660800 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=1, rmapbt=1
+         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=0
+data     =                       bsize=4096   blocks=78643200, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+log      =internal log           bsize=4096   blocks=38400, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+data blocks changed from 78643200 to 235403264
+```
+6. Verify the new size of the LV:
+```bash
+sudo lvs
+```
+You should see output similar to:
+```plaintext
+  LV        VG        Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  nfs-share ubuntu-vg -wi-ao---- 897.99g                                                    
+  ubuntu-lv ubuntu-vg -wi-ao---- 100.00g                                                    
+```
+## troubleshooting
+If you encounter issues during the setup process, consider the following troubleshooting steps:
+1. Check NFS server status:
+```bash
+sudo systemctl status nfs-kernel-server
+```
+2. Verify NFS exports:
+```bash
+showmount -e localhost
+```
+3. Review system logs for errors:
+```bash
+sudo tail -f /var/log/syslog
+```
+4. Ensure firewall rules are correctly configured to allow NFS traffic.
+5. Verify LVM configuration:
+```bash
+sudo lvdisplay
+sudo vgdisplay
+sudo pvdisplay
+```
+## Conclusion
+By following this guide, you have successfully set up an Ubuntu virtual machine with LVM storage and
+NFS shares. This configuration provides a flexible and scalable storage solution that can be easily managed and expanded as needed. Enjoy your new Ubuntu VM setup!
+
+
+
+
 
 
 
