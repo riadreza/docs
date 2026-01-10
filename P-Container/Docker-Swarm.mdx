@@ -92,6 +92,12 @@ Docker Swarm mode introduces several key components that work together to provid
 ## Setting up a Swarm
 
 <Steps>
+  <Step title="Check the docker swarm status">
+  In command line use below command:
+  ```bash
+  docker info | grep Swarm
+  ```
+  </Step>
   <Step title="Initialize the Swarm">
     On your manager node, run the following command to initialize the swarm:
 
