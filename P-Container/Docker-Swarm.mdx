@@ -32,3 +32,18 @@ ized applications across a cluster of Docker hosts.
 5. **Service Discovery**: Built-in DNS-based service discovery for easy communication between containers.   
 6. **High Availability**: Automatic failover and recovery of services in case of node failures.
 7. **Rolling Updates**: Update services with zero downtime using rolling updates.
+8. **Secure by Default**: Encrypted communication between nodes and secure service-to-service communication.
+## What is sevice in docker swarm
+In Docker Swarm, a service is a higher-level abstraction that defines how containers should be deployed and managed within the swarm. A service consists of one or more replicas of a containerized application, and it specifies the desired state for those containers. When you create a service, Docker Swarm ensures that the specified number of replicas are running and manages their lifecycle.
+Key features of Docker Swarm services include:
+1. **Replicas**: You can define the number of replicas (instances) of a service that should be running at any given time. Docker Swarm will automatically create or remove containers to match the desired state.
+2. **Load Balancing**: Docker Swarm automatically distributes incoming requests to the available replicas
+    of a service, providing built-in load balancing.
+3. **Service Discovery**: Services can be discovered by other services within the swarm using DNS-based service discovery.
+4. **Rolling Updates**: You can update a service with new container images or configurations without
+    downtime, using rolling updates.
+5. **Constraints and Preferences**: You can specify constraints and preferences for where services should run
+    within the swarm, such as on specific nodes or based on resource availability.
+6. **Networking**: Services can be connected to overlay networks, allowing containers on different nodes
+    to communicate with each other securely.    
+Overall, services in Docker Swarm provide a powerful way to manage and orchestrate containerized applications across a cluster of Docker hosts, ensuring high availability, scalability, and ease of management.
