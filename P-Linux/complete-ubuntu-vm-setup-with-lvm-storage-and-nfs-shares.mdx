@@ -30,7 +30,7 @@ sudo passwd root
 3. Command to enable remote root login
 ```bash
 sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-sudo systemctl restart sshd
+sudo systemctl restart ssh
 ```
 ## Step 3: Install root CA certificates in the trust store
 1. Copy the root CA certificate file (e.g., `my-ca.crt`) to the `/usr/local/share/ca-certificates/` directory.
