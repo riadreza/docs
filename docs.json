@@ -76,7 +76,7 @@
     },
     {
     "group": "Automation Tools",
-    "icon": "/icons/automation-tools.svg",
+    "icon": "/icons/autometion-tools.svg",
     "expanded": false,
     "pages": [
       "P-Automation-tools/Automation-Tools"
