@@ -135,6 +135,12 @@ You should see output similar to:
 Export list for localhost:
 /mnt/nfs-share 192.168.12.0/255.255.255.0
 ```
+7. Set proper permissions on the NFS share directory:
+```bash
+sudo chown -R nobody:nogroup /mnt/nfs-share
+sudo chmod 777 /mnt/nfs-share
+```
+
 ## Connect from Client Machine
 1. On the client machine, install NFS client packages:
 ```bash
@@ -213,7 +219,20 @@ ls /mnt/nfs/nfs-share
 ```bash
 sudo tail -f /var/log/syslog | grep autofs
 ```
-
+## Allow ip to access NFS share through firewall
+If you have UFW enabled on your Ubuntu VM, you need to allow the IP address or subnet of the client machines to access the NFS share. Use the following command to allow access:
+```bash
+sudo ufw allow from
+sudo ufw allow from
+sudo ufw reload
+```
+Replace `<CLIENT_IP_OR_SUBNET>` with the actual IP address or subnet of the client machines.
+## Extend the LVM Storage (if needed)
+If you need to extend the LVM storage in the future, follow these steps:
+1. Check the available free space in the volume group:
+```bash
+vgs
+```
 
 
 
