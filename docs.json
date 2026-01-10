@@ -75,21 +75,15 @@
     ]
     },
     {
-    "group": "Unified Communications",
-    "hidden": true,
-    "icon": "/icons/container.svg",
+    "group": "Automation Tools",
+    "icon": "/icons/automation-tools.svg",
     "pages": [
-      "P-Container/docker",
+      "P-Container/Automation-Tools",
       {
         "group": "Docker Workouts",
+        "hidden": true,
         "expanded": false,
         "pages": ["P-Container/deploy Traefik and configure with Cloudflare"
-      ]
-      },
-      {
-        "group": "Container Orchestration",
-        "expanded": false,
-        "pages": ["P-Container/kubernetes"
       ]
       }
     ]
