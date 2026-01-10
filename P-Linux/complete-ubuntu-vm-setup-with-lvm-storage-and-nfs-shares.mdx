@@ -179,12 +179,44 @@ sudo systemctl status autofs
 ```
 4. Edit the autofs master configuration file `/etc/auto.master` to add a new map file:
 ```bash
-echo '/- /etc/auto.nfs' | sudo tee -a /etc/auto.master
+echo "/mnt/nfs /etc/auto.nfs --ghost --timeout=60" | sudo tee -a /etc/auto.master
 ```
 This command will append the auto.master file with the new map file entry. The output will be:
 ```plaintext
-/- /etc/auto.nfs
+/mnt/nfs /etc/auto.nfs --ghost --timeout=60
 ```
+5. Create the map file `/etc/auto.nfs` with the NFS share details:
+```bash 
+echo "nfs-share -fstype=nfs,rw <NFS_SERVER_IP>:/mnt/nfs-share" | sudo tee /etc/auto.nfs
+```
+This command will create the auto.nfs file with the NFS share configuration. The output will be:
+```plaintext
+nfs-share -fstype=nfs,rw <NFS_SERVER_IP>:/mnt/nfs-share
+```
+6. Restart the autofs service to apply the changes:
+```bash
+sudo systemctl restart autofs
+```
+7. check the mounts:
+```bash
+mount | grep autofs
+```
+You should see output similar to:
+```plaintext
+autofs on /mnt/nfs type autofs (rw,relatime,fd=XX,pgrp=XXXX,timeout=60,minproto=5,maxproto=5)
+```
+8. Access the NFS share:
+```bash
+ls /mnt/nfs/nfs-share
+```
+9. watch the autofs logs for any issues:
+```bash
+sudo tail -f /var/log/syslog | grep autofs
+```
+
+
+
+
 
 
 
