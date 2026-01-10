@@ -141,3 +141,50 @@ Export list for localhost:
 sudo apt update
 sudo apt install nfs-common -y
 ```
+2. check avaiable shares from the NFS server:
+```bash
+showmount -e <NFS_SERVER_IP>
+```
+You should see the exported shares from the server.
+3. Create a mount point on the client machine:
+```bash
+sudo mkdir -p /mnt/nfs-client
+```
+4. Mount the NFS share from the server:
+```bash
+sudo mount <NFS_SERVER_IP>:/mnt/nfs-share /mnt/nfs-client
+```
+5. To make the NFS mount persistent across reboots, add an entry to `/etc/fstab` on the client machine:
+```bash
+echo '<NFS_SERVER_IP>:/mnt/nfs-share /mnt/nfs-client nfs defaults 0 0' | sudo tee -a /etc/fstab
+```
+This command will append the fstab file with the new NFS mount entry. The output will be:
+```plaintext
+<NFS_SERVER_IP>:/mnt/nfs-share /mnt/nfs-client nfs defaults 0 0
+```
+6. Unmount the NFS share when done:
+```bash
+sudo umount /mnt/nfs-client
+```
+## Mount using autofs (optional)
+1. We dont need to add directory in the fstab file. Instead we will use autofs to mount the NFS share on demand.
+2. Install autofs package:
+```bash
+sudo apt update
+sudo apt install autofs -y
+```
+3. Check the status of autofs service:
+```bash
+sudo systemctl status autofs
+```
+4. Edit the autofs master configuration file `/etc/auto.master` to add a new map file:
+```bash
+echo '/- /etc/auto.nfs' | sudo tee -a /etc/auto.master
+```
+This command will append the auto.master file with the new map file entry. The output will be:
+```plaintext
+/- /etc/auto.nfs
+```
+
+
+
