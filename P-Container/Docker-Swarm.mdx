@@ -123,4 +123,26 @@ Docker Swarm mode introduces several key components that work together to provid
     docker node ls
     ```
   </Step>
+  <Step title="Promote all node to manager">
+  On the manager node run below command
+  ```bash
+  docker node promote $(docker node ls -q)
+  ```
+  </Step>
+
 </Steps>
+## Example of deploying a service in imperative methord:
+For this I am considering nginx container.
+```bash
+docker service create --name nginx --replicas 3 -p 88:80 nginx
+```
+2. Check which services are created (list of all the services)
+```bash
+docker service ls
+```
+3. To check where the service is running
+```bash
+docker service ps nginx
+```
+
+
