@@ -6,56 +6,111 @@ tags: ["Docker", "Swarm", "Container Orchestration", "Clustering"]
 keywords: ["Docker", "Swarm", "Container Orchestration", "Clustering", "Docker Services", "Load Balancing"]
 ---
 ## Introduction
-Docker Swarm is a native clustering and orchestration tool for Docker containers. It allows you to create and manage a cluster of Docker nodes as a single virtual system. In this guide, we will walk through the steps to set up and manage a Docker Swarm cluster.   
+Docker Swarm is a native clustering and orchestration tool for Docker containers. It allows you to create and manage a cluster of Docker nodes as a single virtual system. In this guide, you will walk through the steps to set up and manage a Docker Swarm cluster.
+
 <Info>
-## Prerequisites
-Before we begin, ensure you have the following prerequisites in place:
+**Prerequisites**
+
+Before you begin, ensure you have the following prerequisites in place:
 - Multiple machines (physical or virtual) with Docker installed.
 - Basic knowledge of Docker and command line operations.
 </Info>
-## Problem we face without orchestration
-When managing multiple Docker containers across different hosts, several challenges arise:  
-1. **Manual Deployment**: Deploying containers on each host manually is time-consuming and error-prone.
-2. **Scaling Issues**: Scaling services up or down requires manual intervention on each host.
-3. **Load Balancing**: Distributing traffic evenly across containers is complex without built-in
-    load balancing.
-4. **Service Discovery**: Containers need to know how to find each other, which can be difficult
-    without orchestration.
-5. **Fault Tolerance**: If a container or host fails, there is no automatic recovery mechanism.
-Docker Swarm addresses these challenges by providing a unified platform for deploying, scaling, and managing container
-ized applications across a cluster of Docker hosts.
-## Benifits of Docker Swarm
-1. **Simplified Deployment**: Deploy services across multiple nodes with a single command.
-2. **Health Checks**: Automatically monitor and restart unhealthy containers.
-3. **Scalability**: Easily scale services up or down with simple commands.
-4. **Built-in Load Balancing**: Automatically distributes traffic across containers.
-5. **Service Discovery**: Built-in DNS-based service discovery for easy communication between containers.   
-6. **High Availability**: Automatic failover and recovery of services in case of node failures.
-7. **Rolling Updates**: Update services with zero downtime using rolling updates.
-8. **Secure by Default**: Encrypted communication between nodes and secure service-to-service communication.
-## What is sevice in docker swarm
-In Docker Swarm, a service is a higher-level abstraction that defines how containers should be deployed and managed within the swarm. A service consists of one or more replicas of a containerized application, and it specifies the desired state for those containers. When you create a service, Docker Swarm ensures that the specified number of replicas are running and manages their lifecycle.
+
+## Why use orchestration?
+
+When managing multiple Docker containers across different hosts, several challenges arise:
+
+<AccordionGroup>
+  <Accordion title="Manual Deployment">
+    Deploying containers on each host manually is time-consuming and error-prone.
+  </Accordion>
+  <Accordion title="Scaling Issues">
+    Scaling services up or down requires manual intervention on each host.
+  </Accordion>
+  <Accordion title="Load Balancing">
+    Distributing traffic evenly across containers is complex without built-in load balancing.
+  </Accordion>
+  <Accordion title="Service Discovery">
+    Containers need to know how to find each other, which can be difficult without orchestration.
+  </Accordion>
+  <Accordion title="Fault Tolerance">
+    If a container or host fails, there is no automatic recovery mechanism.
+  </Accordion>
+</AccordionGroup>
+
+Docker Swarm addresses these challenges by providing a unified platform for deploying, scaling, and managing containerized applications across a cluster of Docker hosts.
+
+## Benefits of Docker Swarm
+
+<CardGroup cols={2}>
+  <Card title="Simplified Deployment" icon="rocket">
+    Deploy services across multiple nodes with a single command.
+  </Card>
+  <Card title="High Availability" icon="shield-check">
+    Automatic failover and recovery of services in case of node failures.
+  </Card>
+  <Card title="Scalability" icon="chart-line">
+    Easily scale services up or down with simple commands.
+  </Card>
+  <Card title="Rolling Updates" icon="rotate">
+    Update services with zero downtime using rolling updates.
+  </Card>
+</CardGroup>
+
+Other key features include:
+- **Health Checks**: Automatically monitor and restart unhealthy containers.
+- **Built-in Load Balancing**: Automatically distributes traffic across containers.
+- **Service Discovery**: Built-in DNS-based service discovery for easy communication between containers.
+- **Secure by Default**: Encrypted communication between nodes and secure service-to-service communication.
+
+## What is a Service?
+
+In Docker Swarm, a **service** is a higher-level abstraction that defines how containers should be deployed and managed within the swarm. A service consists of one or more replicas of a containerized application, and it specifies the desired state for those containers. When you create a service, Docker Swarm ensures that the specified number of replicas are running and manages their lifecycle.
+
 Key features of Docker Swarm services include:
+
 1. **Replicas**: You can define the number of replicas (instances) of a service that should be running at any given time. Docker Swarm will automatically create or remove containers to match the desired state.
-2. **Load Balancing**: Docker Swarm automatically distributes incoming requests to the available replicas
-    of a service, providing built-in load balancing.
+2. **Load Balancing**: Docker Swarm automatically distributes incoming requests to the available replicas of a service, providing built-in load balancing.
 3. **Service Discovery**: Services can be discovered by other services within the swarm using DNS-based service discovery.
-4. **Rolling Updates**: You can update a service with new container images or configurations without
-    downtime, using rolling updates.
-5. **Constraints and Preferences**: You can specify constraints and preferences for where services should run
-    within the swarm, such as on specific nodes or based on resource availability.
-6. **Networking**: Services can be connected to overlay networks, allowing containers on different nodes
-    to communicate with each other securely.    
-Overall, services in Docker Swarm provide a powerful way to manage and orchestrate containerized applications across a cluster of Docker hosts, ensuring high availability, scalability, and ease of management.
+4. **Rolling Updates**: You can update a service with new container images or configurations without downtime, using rolling updates.
+5. **Constraints and Preferences**: You can specify constraints and preferences for where services should run within the swarm, such as on specific nodes or based on resource availability.
+6. **Networking**: Services can be connected to overlay networks, allowing containers on different nodes to communicate with each other securely.
+
 ## Docker Components in Swarm Mode
+
 Docker Swarm mode introduces several key components that work together to provide container orchestration and management across a cluster of Docker nodes. Here are the main components of Docker Swarm mode:
+
 1. **Manager Nodes**: Manager nodes are responsible for managing the swarm, including maintaining the desired state of services, scheduling tasks, and handling swarm management operations. They use the Raft consensus algorithm to ensure consistency across the swarm.
 2. **Worker Nodes**: Worker nodes are responsible for running the containers that make up the services in the swarm. They receive tasks from manager nodes and execute them.
 3. **Services**: A service is a definition of how containers should be deployed and managed within the swarm. It specifies the desired state for a group of containers, including the number of replicas, networking, and load balancing.
 4. **Tasks**: A task is a single instance of a service running on a worker node. Each task corresponds to a container that is created and managed by Docker Swarm.
-5. **Overlay Networks**: Overlay networks allow containers running on different nodes to communicate with each  other securely. They provide a virtual network that spans across the swarm, enabling service discovery and load balancing.
-6. **Load Balancer**: Docker Swarm includes a built-in load balancer that   distributes incoming requests to the available replicas of a service, ensuring even distribution of traffic.
-7. **Raft Consensus Algorithm**: Docker Swarm uses the Raft consensus algorithm to  maintain consistency among manager nodes. This ensures that all manager nodes have the same view of the swarm's state.
-8. **Service Discovery**: Docker Swarm provides DNS-based service discovery, allowing services to
-    find and communicate with each other using service names.
-These components work together to provide a robust and scalable platform for deploying, managing, and orchestrating containerized applications across a cluster of Docker hosts.
+5. **Overlay Networks**: Overlay networks allow containers running on different nodes to communicate with each other securely. They provide a virtual network that spans across the swarm, enabling service discovery and load balancing.
+6. **Load Balancer**: Docker Swarm includes a built-in load balancer that distributes incoming requests to the available replicas of a service, ensuring even distribution of traffic.
+7. **Raft Consensus Algorithm**: Docker Swarm uses the Raft consensus algorithm to maintain consistency among manager nodes. This ensures that all manager nodes have the same view of the swarm's state.
+8. **Service Discovery**: Docker Swarm provides DNS-based service discovery, allowing services to find and communicate with each other using service names.
+
+## Setting up a Swarm
+
+<Steps>
+  <Step title="Initialize the Swarm">
+    On your manager node, run the following command to initialize the swarm:
+
+    ```bash
+    docker swarm init --advertise-addr <MANAGER-IP>
+    ```
+  </Step>
+  <Step title="Join Worker Nodes">
+    Copy the join token command output from the previous step and run it on your worker nodes:
+
+    ```bash
+    docker swarm join --token <TOKEN> <MANAGER-IP>:2377
+    ```
+  </Step>
+  <Step title="Verify the Cluster">
+    On the manager node, verify that all nodes have joined:
+
+    ```bash
+    docker node ls
+    ```
+  </Step>
+</Steps>
