@@ -66,8 +66,10 @@
       "P-Container/docker-troubleshooting",
       {
         "group": "Container Orchestration",
+        "icon": "/icons/container-orchestration.svg",
         "expanded": false,
-        "pages": ["P-Container/kubernetes"
+        "pages": ["P-Container/Docker-Swarm",
+                  "P-Container/kubernetes"
       ]
       }
     ]
