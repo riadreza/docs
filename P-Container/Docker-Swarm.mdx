@@ -7,3 +7,20 @@ keywords: ["Docker", "Swarm", "Container Orchestration", "Clustering", "Docker S
 ---
 ## Introduction
 Docker Swarm is a native clustering and orchestration tool for Docker containers. It allows you to create and manage a cluster of Docker nodes as a single virtual system. In this guide, we will walk through the steps to set up and manage a Docker Swarm cluster.   
+<Info>
+## Prerequisites
+Before we begin, ensure you have the following prerequisites in place:
+- Multiple machines (physical or virtual) with Docker installed.
+- Basic knowledge of Docker and command line operations.
+</Info>
+## Problem we face without orchestration
+When managing multiple Docker containers across different hosts, several challenges arise:  
+1. **Manual Deployment**: Deploying containers on each host manually is time-consuming and error-prone.
+2. **Scaling Issues**: Scaling services up or down requires manual intervention on each host.
+3. **Load Balancing**: Distributing traffic evenly across containers is complex without built-in
+    load balancing.
+4. **Service Discovery**: Containers need to know how to find each other, which can be difficult
+    without orchestration.
+5. **Fault Tolerance**: If a container or host fails, there is no automatic recovery mechanism.
+Docker Swarm addresses these challenges by providing a unified platform for deploying, scaling, and managing container
+ized applications across a cluster of Docker hosts.
