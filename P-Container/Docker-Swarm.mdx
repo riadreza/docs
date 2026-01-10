@@ -47,3 +47,15 @@ Key features of Docker Swarm services include:
 6. **Networking**: Services can be connected to overlay networks, allowing containers on different nodes
     to communicate with each other securely.    
 Overall, services in Docker Swarm provide a powerful way to manage and orchestrate containerized applications across a cluster of Docker hosts, ensuring high availability, scalability, and ease of management.
+## Docker Components in Swarm Mode
+Docker Swarm mode introduces several key components that work together to provide container orchestration and management across a cluster of Docker nodes. Here are the main components of Docker Swarm mode:
+1. **Manager Nodes**: Manager nodes are responsible for managing the swarm, including maintaining the desired state of services, scheduling tasks, and handling swarm management operations. They use the Raft consensus algorithm to ensure consistency across the swarm.
+2. **Worker Nodes**: Worker nodes are responsible for running the containers that make up the services in the swarm. They receive tasks from manager nodes and execute them.
+3. **Services**: A service is a definition of how containers should be deployed and managed within the swarm. It specifies the desired state for a group of containers, including the number of replicas, networking, and load balancing.
+4. **Tasks**: A task is a single instance of a service running on a worker node. Each task corresponds to a container that is created and managed by Docker Swarm.
+5. **Overlay Networks**: Overlay networks allow containers running on different nodes to communicate with each  other securely. They provide a virtual network that spans across the swarm, enabling service discovery and load balancing.
+6. **Load Balancer**: Docker Swarm includes a built-in load balancer that   distributes incoming requests to the available replicas of a service, ensuring even distribution of traffic.
+7. **Raft Consensus Algorithm**: Docker Swarm uses the Raft consensus algorithm to  maintain consistency among manager nodes. This ensures that all manager nodes have the same view of the swarm's state.
+8. **Service Discovery**: Docker Swarm provides DNS-based service discovery, allowing services to
+    find and communicate with each other using service names.
+These components work together to provide a robust and scalable platform for deploying, managing, and orchestrating containerized applications across a cluster of Docker hosts.
