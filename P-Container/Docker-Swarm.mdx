@@ -179,7 +179,7 @@ docker service create -p 8081:80 --name web --mode global nginx:latest
 ## Docker Stack
 A Docker Stack is a group of interrelated services that work together to form a complete, multi-container application, deployed and managed as a single entity. It is specifically used within Docker Swarm mode to orchestrate distributed applications across multiple nodes (machines). 
 ```bash
-service:
+services:
   web:
     image: nginx:latest
     port:
