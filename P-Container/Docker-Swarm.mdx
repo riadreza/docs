@@ -144,5 +144,50 @@ docker service ls
 ```bash
 docker service ps nginx
 ```
+4. To scale up or scale down the servie:
+```bash
+docker service scale nginx=5
+```
+5. To inspect the service
+```bash
+docker service inspect --pretty nginx
+```
+6. Delete a service
+```bash
+docker service rm nginx
+```
+## ROlling Updates
 
+1. 
+```bash
+docker service update --image nginx:1.17.10 nginx
+```
+2. Rollback to previous state:
+```bash
+docker service update --rollback nginx
+```
+3. Update failure abstraction
+```bash
+docker service update --update-failure-action=rollback --update-failure-limit=3 nginx
+```
+## Global Mode:
+If I run the global mode then then the container will be depoloyed in the all the worker node available in the cluster, so I dont have to be specify the number of replica.
+if you want some container where the agent or monitoring container need to deployed in the every container, in that case we can consider it.
+```bash
+docker service create -p 8081:80 --name web --mode global nginx:latest
+```
+## Docker Stack
+A Docker Stack is a group of interrelated services that work together to form a complete, multi-container application, deployed and managed as a single entity. It is specifically used within Docker Swarm mode to orchestrate distributed applications across multiple nodes (machines). 
+```bash
+service:
+  web:
+    image: nginx:latest
+    port:
+      - 8081:80
+    volume:
+      - /tmp:/usr/share/nginx/html
+    deploy:
+      mode: replicated
+      replicas: 3
+```
 
