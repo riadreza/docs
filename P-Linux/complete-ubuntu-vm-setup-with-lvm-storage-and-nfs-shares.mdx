@@ -209,6 +209,11 @@ nfs-share -fstype=nfs,rw,nolock,soft,tcp,intr 192.168.12.14:/mnt/nfs-share
 ```bash
 sudo systemctl restart autofs
 ```
+**Why these extra flags matter for Docker:**
+  **nolock:** Prevents the NFS client and server from trying to coordinate file locks, which often fail when multiple containers or nodes access the same share.
+  **soft:** If the NFS server goes down, the client will eventually report an error instead of hanging the entire Linux process (and your Docker service) forever.
+  **tcp:** Forces the use of TCP, which is more stable for Docker traffic than UDP.
+  **intr:** Allows NFS requests to be interrupted if the server stops responding.
 
 5. Create the map file `/etc/auto.nfs` with the NFS share details:
 ```bash 
