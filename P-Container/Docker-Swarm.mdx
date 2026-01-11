@@ -131,70 +131,105 @@ Docker Swarm mode introduces several key components that work together to provid
   </Step>
 
 </Steps>
-## Example of deploying a service in imperative methord:
-For this I am considering nginx container.
-```bash
-docker service create --name nginx --replicas 3 -p 88:80 nginx
-```
-2. Check which services are created (list of all the services)
-```bash
-docker service ls
-```
-3. To check where the service is running
-```bash
-docker service ps nginx
-```
-4. To scale up or scale down the servie:
-```bash
-docker service scale nginx=5
-```
-5. To inspect the service
-```bash
-docker service inspect --pretty nginx
-```
-6. Delete a service
-```bash
-docker service rm nginx
-```
-## ROlling Updates
 
-1. 
-```bash
-docker service update --image nginx:1.17.10 nginx
-```
-2. Rollback to previous state:
-```bash
-docker service update --rollback nginx
-```
-3. Update failure abstraction
-```bash
-docker service update --update-failure-action=rollback --update-failure-limit=3 nginx
-```
-## Global Mode:
-If I run the global mode then then the container will be depoloyed in the all the worker node available in the cluster, so I dont have to be specify the number of replica.
-if you want some container where the agent or monitoring container need to deployed in the every container, in that case we can consider it.
+## Deploying a Service (Imperative)
+
+In this example, we will deploy an Nginx service using imperative commands.
+
+<Steps>
+  <Step title="Create the service">
+    Create an Nginx service with 3 replicas mapping port 88 on the host to port 80 in the container.
+    ```bash
+    docker service create --name nginx --replicas 3 -p 88:80 nginx
+    ```
+  </Step>
+  <Step title="List services">
+    Check which services are running.
+    ```bash
+    docker service ls
+    ```
+  </Step>
+  <Step title="Check service tasks">
+    See where the service tasks (containers) are running.
+    ```bash
+    docker service ps nginx
+    ```
+  </Step>
+  <Step title="Scale the service">
+    Scale the service up or down.
+    ```bash
+    docker service scale nginx=5
+    ```
+  </Step>
+  <Step title="Inspect the service">
+    View detailed information about the service.
+    ```bash
+    docker service inspect --pretty nginx
+    ```
+  </Step>
+  <Step title="Delete the service">
+    Remove the service from the swarm.
+    ```bash
+    docker service rm nginx
+    ```
+  </Step>
+</Steps>
+
+## Rolling Updates
+
+Docker Swarm allows you to update services without downtime.
+
+<Steps>
+  <Step title="Update image">
+    Update the service to use a specific image version.
+    ```bash
+    docker service update --image nginx:1.17.10 nginx
+    ```
+  </Step>
+  <Step title="Rollback">
+    If an update fails, you can rollback to the previous state.
+    ```bash
+    docker service update --rollback nginx
+    ```
+  </Step>
+  <Step title="Configure failure action">
+    Define behavior when an update fails.
+    ```bash
+    docker service update --update-failure-action=rollback --update-failure-limit=3 nginx
+    ```
+  </Step>
+</Steps>
+
+## Global Mode
+
+When running in **Global Mode**, a container is deployed to every available worker node in the cluster. You do not specify the number of replicas. This is ideal for monitoring agents or logging services that need to run on every node.
+
 ```bash
 docker service create -p 8081:80 --name web --mode global nginx:latest
 ```
+
 ## Docker Stack
-A Docker Stack is a group of interrelated services that work together to form a complete, multi-container application, deployed and managed as a single entity. It is specifically used within Docker Swarm mode to orchestrate distributed applications across multiple nodes (machines). 
-```bash
+
+A Docker Stack is a group of interrelated services that work together to form a complete, multi-container application, deployed and managed as a single entity. It is specifically used within Docker Swarm mode to orchestrate distributed applications across multiple nodes.
+
+Example `docker-compose.yml` for a stack:
+
+```yaml docker-compose.yml
+version: "3.8"
 services:
   web:
     image: nginx:latest
-    port:
-      - 8081:80
-    volume:
+    ports:
+      - "8081:80"
+    volumes:
       - /tmp:/usr/share/nginx/html
     deploy:
       mode: replicated
       replicas: 3
 ```
-## Service
-Docker Swarm mode is a built-in container orchestration feature in the Docker Engine that transforms a group of Docker hosts into a single, virtual Docker host. It works by using a declarative model, where you define the desired state of your application (e.g., "I want 3 replicas of this Nginx container"), and the swarm manager automatically works to maintain that state. 
 
-## Docker configurations
+To deploy the stack:
 
-## Health Checks:
-
-
+```bash
+docker stack deploy -c docker-compose.yml my-stack
+```
