@@ -202,6 +202,14 @@ This command will append the auto.master file with the new map file entry. The o
 ```plaintext
 /mnt/nfs /etc/auto.nfs --ghost --timeout=60
 ```
+For docker swarm it will be better if we add below permissions:
+```plaintext
+nfs-share -fstype=nfs,rw,nolock,soft,tcp,intr 192.168.12.14:/mnt/nfs-share
+```
+```bash
+sudo systemctl restart autofs
+```
+
 5. Create the map file `/etc/auto.nfs` with the NFS share details:
 ```bash 
 echo "nfs-share -fstype=nfs,rw <NFS_SERVER_IP>:/mnt/nfs-share" | sudo tee /etc/auto.nfs
