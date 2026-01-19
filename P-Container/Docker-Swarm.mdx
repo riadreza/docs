@@ -18,7 +18,7 @@ Before you begin, ensure you have the following prerequisites in place:
 
 ## Why use orchestration?
 
-When managing multiple Docker containers across different hosts, several challenges arise:
+When managing multiple Docker containers across different hosts, several challenges can arise:
 
 <AccordionGroup>
   <Accordion title="Manual Deployment">
@@ -233,3 +233,16 @@ To deploy the stack:
 ```bash
 docker stack deploy -c docker-compose.yml my-stack
 ```
+To remove the stack:
+
+```bash 
+docker stack rm my-stack
+```
+
+## Conclusion 
+In this guide, we have covered the basics of Docker Swarm, including how to create a swarm, deploy a service, and manage tasks. We have also touched on Docker Stack, a tool for orchestrating distributed applications across multiple nodes in a swarm.
+We hope this guide has provided you with a solid understanding of Docker Swarm and how you can use it to manage your containerized applications.
+
+
+
+
