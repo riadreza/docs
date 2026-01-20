@@ -1,10 +1,128 @@
 ---
 title: "Edge Architecture for Docker Swarm: Deploying HAProxy in Front of Traefik with Real-Time Traffic Analytics via GoAccess"
 icon: ""
-description: ""
-tags: []
+description: "A comprehensive guide to setting up an edge architecture using HAProxy as a front proxy to Traefik, integrated with GoAccess for real-time traffic analytics in a Docker Swarm environment."  
+tags: ["Docker", "Swarm", "HAProxy", "Traefik", "GoAccess", "Edge Architecture", "Reverse Proxy", "Traffic Analytics"]
+keywords: ["Docker", "Swarm", "HAProxy", "Traefik", "GoAccess", "Edge Architecture", "Reverse Proxy", "Traffic Analytics"]  
 ---
 ## Introduction
+This guide provides a step-by-step approach to deploying an edge architecture in a Docker Swarm environment. We will set up HAProxy as a front proxy to Traefik, which will handle routing to backend services. Additionally, we will integrate GoAccess for real-time traffic analytics, allowing us to monitor and analyze incoming traffic effectively.  
+<Info>
 ## Prerequisite
-## DEployment Procedure
-### Step 1: 
+- Docker Swarm cluster with at least one manager and worker node.
+- Basic understanding of Docker, Traefik, HAProxy, and GoAccess.
+</Info>
+## Logical Diagram
+```plaintext    
++----------------+        +----------------+        +----------------+
+|                |        |                |        |                |
+|   Clients      | <----> |    HAProxy     | <----> |    Traefik     |        +----------------+
+|                |        |                |        |                |        |   Backend      |
++----------------+        +----------------+        +----------------+        |   Services     |
+|                |        |                |        |                |        +----------------+
+|  Internet      |        |  Edge Proxy    |        |  Reverse Proxy |        |                |
+|                |        |                |        |                |        |                |
++----------------+        +----------------+        +----------------+        |                |
+|                |        |                |        |                |        |                |    
++----------------+        +----------------+        +----------------+        +----------------+
+```
+## Overview
+In this guide, we will cover the following steps:
+1. Deploy HAProxy as a front proxy in Docker Swarm.
+2. Configure Traefik as a reverse proxy behind HAProxy.
+3. Set up GoAccess for real-time traffic analytics.
+## Step 1: Deploy HAProxy
+Create a Docker Compose file for HAProxy:
+```yaml
+services:
+  haproxy:
+    image: haproxy:lts
+    container_name: haproxy-production
+    restart: always
+    network_mode: host
+    user: root
+    # THE FIX: Use a shell to run haproxy and pipe output to the NFS log file
+    command: /bin/sh -c "haproxy -f /usr/local/etc/haproxy/haproxy.cfg | tee -a /var/log/haproxy/haproxy.log"
+    volumes:
+      - /opt/palonet/haproxy/config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - /opt/palonet/haproxy/certs:/opt/palonet/haproxy/certs:ro
+      - /opt/palonet/haproxy/errors:/opt/palonet/haproxy/errors:ro
+      - /mnt/nfs-share/goaccess/logs/haproxy:/var/log/haproxy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+```
+## Step 2: Configure haproxy.cfg
+Create the HAProxy configuration file (`haproxy.cfg`):
+```cfg
+global
+    log stdout format raw local0
+    maxconn 50000
+
+defaults
+    mode http
+    log global
+    timeout connect 10s
+    timeout client 30s
+    timeout server 30s
+    timeout tunnel 1h
+    log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hr %hs %{+Q}r {%hr}"
+
+frontend fe_main
+    bind *:80
+    bind *:443 ssl crt /opt/palonet/haproxy/certs/palonet.org.pem alpn h2,http/1.1
+
+    # This captures the browser string
+    capture request header User-Agent len 512
+
+    # Force HTTPS
+    http-request redirect scheme https code 301 unless { ssl_fc }
+
+    option forwardfor
+    http-request set-header X-Forwarded-Proto https
+    http-request set-header X-Forwarded-Port 443
+
+    # CLEAN LOG FORMAT: Removes the double-braces you had earlier
+    log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %{+Q}r {%hr}"
+
+    default_backend be_traefik_swarm
+
+backend be_traefik_swarm
+    balance roundrobin
+    option http-server-close
+
+    # CRITICAL: This allows Traefik to match the "Host" rules in your stack labels
+    http-request set-header Host %[hdr(host)]
+
+    # WebSocket Support for Portainer
+    http-request set-header Upgrade %[hdr(Upgrade)]
+    http-request set-header Connection "upgrade" if { hdr(Upgrade) -i WebSocket }
+
+    # WebSocket Support (generic)
+    http-request set-header Upgrade %[req.hdr(Upgrade)]
+    http-request set-header Connection "upgrade" if { req.hdr(Upgrade) -i websocket }
+
+    # Health check: Using Port 80 (where we know Traefik is listening)
+    option httpchk GET /ping
+    http-check expect status 200
+
+    # Removed 'port 8080' so it checks the actual traffic port
+    server manager1 192.168.12.11:80 check inter 2s fall 3 rise 2
+    server manager2 192.168.12.15:80 check inter 2s fall 3 rise 2
+    server manager3 192.168.12.16:80 check inter 2s fall 3 rise 2
+
+listen stats_prometheus
+    bind *:8404
+    mode http
+    stats enable
+    stats uri /metrics
+    http-request use-service prometheus-exporter
+    stats auth admin:Prothomalo321
+    stats refresh 10s
+```
