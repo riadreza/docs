@@ -73,7 +73,7 @@
         "group": "Docker Swarm Projects",
         "icon": "/icons/docker project.svg",
         "expanded": false,
-        "pages": ["P-Container/deploy-Traefik-and-configure-with-Cloudflare"
+        "pages": ["P-Container/edge-architecture-for-docker-swarm-deploying-haproxy-in-front-of-traefik-with-real-time-traffic-analytics-via-goaccess"
         ]
       },
                   "P-Container/kubernetes"
