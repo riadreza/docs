@@ -69,6 +69,13 @@
         "icon": "/icons/container-orchestration.svg",
         "expanded": false,
         "pages": ["P-Container/Docker-Swarm",
+        {
+        "group": "Docker Swarm Projects",
+        "icon": "/icons/docker project.svg",
+        "expanded": false,
+        "pages": ["P-Container/deploy-Traefik-and-configure-with-Cloudflare"
+        ]
+      },
                   "P-Container/kubernetes"
       ]
       }
