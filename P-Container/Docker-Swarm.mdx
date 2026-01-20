@@ -227,23 +227,22 @@ services:
       mode: replicated
       replicas: 3
 ```
-
-To deploy the stack:
-
-```bash
-docker stack deploy -c docker-compose.yml my-stack
-```
-To remove the stack:
-
-```bash 
-docker stack rm my-stack
-```
-To check the log:
+To deploy the stack, use the following command:
 
 ```bash
-docker stack ps my-stack
+docker stack deploy --compose-file docker-compose.yml stack-name
 ```
+To view the deployed stacks, use:
 
-## Conclusion 
-In this guide, we have covered the basics of Docker Swarm, including how to create a swarm, deploy a service, and manage tasks. We have also touched on Docker Stack, a tool for orchestrating distributed applications across multiple nodes in a swarm.
-We hope this guide has provided you with a solid understanding of Docker Swarm and how you can use it to manage your containerized applications.
+```bash
+docker stack ls
+```
+To remove a stack, use:
+
+```bash
+docker stack rm stack-name
+```
+## Conclusion
+Docker Swarm provides a powerful and easy-to-use platform for container orchestration and management. By following the steps outlined in this guide, you can set up and manage a Docker Swarm cluster to deploy, scale, and maintain your containerized applications efficiently.
+For more detailed information and advanced configurations, refer to the [official Docker Swarm documentation](https://docs.docker.com/engine/swarm/).
+---
