@@ -20,32 +20,39 @@
         "group": "Operating Systems",
         "icon": "/icons/operatingsystem.svg",
         "pages": [
-          "P-Linux/Linux",
           {
-            "group": "Linux Projects",
-            "icon": "/icons/linux project.svg",
+            "group": "Linux",
+            "icon": "/icons/linux.svg",
             "expanded": false,
             "pages": [
-              "P-Linux/Setting-Up-a-Production-Ready-API-with-Nginx-and-Lets-Encrypt"
-            ]
-          },
-          {
-            "group": "Linux Distributions",
-            "icon": "/icons/linux distro.svg",
-            "expanded": false,
-            "pages": [
-              "P-Linux/ubuntu",
+              "P-Linux/Linux",
               {
-                "group": "Ubuntu Configurations",
-                "icon": "/icons/ubuntu-config.svg",
+                "group": "Linux Projects",
+                "icon": "/icons/linux project.svg",
                 "expanded": false,
                 "pages": [
-                  "P-Linux/complete-ubuntu-vm-setup-with-lvm-storage-and-nfs-shares"
+                  "P-Linux/Setting-Up-a-Production-Ready-API-with-Nginx-and-Lets-Encrypt"
                 ]
               },
-              "P-Linux/fedora",
-              "P-Linux/debian",
-              "P-Linux/arch"
+              {
+                "group": "Linux Distributions",
+                "icon": "/icons/linux distro.svg",
+                "expanded": false,
+                "pages": [
+                  "P-Linux/ubuntu",
+                  {
+                    "group": "Ubuntu Configurations",
+                    "icon": "/icons/ubuntu-config.svg",
+                    "expanded": false,
+                    "pages": [
+                      "P-Linux/complete-ubuntu-vm-setup-with-lvm-storage-and-nfs-shares"
+                    ]
+                  },
+                  "P-Linux/fedora",
+                  "P-Linux/debian",
+                  "P-Linux/arch"
+                ]
+              }
             ]
           },
           {
