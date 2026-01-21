@@ -60,7 +60,14 @@
             "icon": "/icons/windows.svg",
             "expanded": false,
             "pages": [
-              "P-Windows/windows"
+              "P-Windows/windows",
+              {
+                "group": "Windows Projects",
+                "icon": "/icons/windows project.svg",
+                "expanded": false,
+                "pages": [
+                ]
+              }
             ]
           }
 
