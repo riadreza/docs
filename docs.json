@@ -47,18 +47,18 @@
               "P-Linux/debian",
               "P-Linux/arch"
             ]
+          },
+          {
+            "group": "Windows",
+            "icon": "/icons/windows.svg",
+            "expanded": false,
+            "pages": [
+              "P-Windows/windows"
+            ]
           }
 
         ]
         
-      },
-      {
-        "group": "Windows",
-        "icon": "/icons/windows.svg",
-        "expanded": false,
-        "pages": [
-          "P-Windows/windows"
-        ]
       },
       {
         "group": "Containerization",
