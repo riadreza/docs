@@ -15,127 +15,142 @@
         "pages": [
           "index"
         ]
-    },
-    {
-    "group": "Operating Systems",
-    "icon": "/icons/operatingsystem.svg",
-    "pages": [
-      "P-Linux/Linux",
+      },
       {
-        "group": "Linux Projects",
-        "icon": "/icons/linux project.svg",
+        "group": "Operating Systems",
+        "icon": "/icons/operatingsystem.svg",
+        "pages": [
+          "P-Linux/Linux",
+          {
+            "group": "Linux Projects",
+            "icon": "/icons/linux project.svg",
+            "expanded": false,
+            "pages": [
+              "P-Linux/Setting-Up-a-Production-Ready-API-with-Nginx-and-Lets-Encrypt"
+            ]
+          },
+          {
+            "group": "Linux Distributions",
+            "icon": "/icons/linux distro.svg",
+            "expanded": false,
+            "pages": [
+              "P-Linux/ubuntu",
+              {
+                "group": "Ubuntu Configurations",
+                "icon": "/icons/ubuntu-config.svg",
+                "expanded": false,
+                "pages": [
+                  "P-Linux/complete-ubuntu-vm-setup-with-lvm-storage-and-nfs-shares"
+                ]
+              },
+              "P-Linux/fedora",
+              "P-Linux/debian",
+              "P-Linux/arch"
+            ]
+          }
+
+        ]
+        
+      },
+      {
+        "group": "Windows",
+        "icon": "/icons/windows.svg",
         "expanded": false,
-        "pages": ["P-Linux/Setting-Up-a-Production-Ready-API-with-Nginx-and-Lets-Encrypt"
+        "pages": [
+          "P-Windows/Windows"
         ]
       },
       {
-        "group": "Linux Distributions",
-        "icon": "/icons/linux distro.svg",
-        "expanded": false,
-        "pages": ["P-Linux/ubuntu",
-                  {
-        "group": "Ubuntu Configurations",
-        "icon": "/icons/ubuntu-config.svg",
-        "expanded": false,
-        "pages": ["P-Linux/complete-ubuntu-vm-setup-with-lvm-storage-and-nfs-shares"
+        "group": "Containerization",
+        "icon": "/icons/container.svg",
+        "pages": [
+          "P-Container/docker",
+          {
+            "group": "Docker Projects",
+            "icon": "/icons/docker project.svg",
+            "expanded": false,
+            "pages": [
+              "P-Container/deploy-Traefik-and-configure-with-Cloudflare",
+              "P-Container/Deploy-Traefik-locally-withmk-cert",
+              "P-Container/HAProxy-Docker-Deployment-Automated-SSL-with-Lets-Encrypt",
+              "P-Container/Deploying-Nginx-Proxy-Manager-Centralized-SSL-Reverse-Proxy-in-Docker",
+              "P-Container/deploy-fumadocs-with-docker-and-github-actions"
+            ]
+          },
+          "P-Container/docker-troubleshooting",
+          {
+            "group": "Container Orchestration",
+            "icon": "/icons/container-orchestration.svg",
+            "expanded": false,
+            "pages": [
+              "P-Container/Docker-Swarm",
+              {
+                "group": "Docker Swarm Projects",
+                "icon": "/icons/docker project.svg",
+                "expanded": false,
+                "pages": [
+                  "P-Container/edge-architecture-for-docker-swarm-deploying-haproxy-in-front-of-traefik-with-real-time-traffic-analytics-via-goaccess"
+                ]
+              },
+              "P-Container/kubernetes"
+            ]
+          }
         ]
       },
-                  "P-Linux/fedora",
-                  "P-Linux/debian",
-                  "P-Linux/arch"
-      ]
+      {
+        "group": "Automation Tools",
+        "icon": "/icons/autometion-tools.svg",
+        "expanded": false,
+        "pages": [
+          "P-Automation-tools/Automation-Tools"
+        ]
+      },
+      {
+        "group": "Getting started",
+        "hidden": true,
+        "pages": [
+          "quickstart",
+          "development"
+        ]
+      },
+      {
+        "group": "Customization",
+        "hidden": true,
+        "pages": [
+          "essentials/settings",
+          "essentials/navigation"
+        ]
+      },
+      {
+        "group": "Writing content",
+        "hidden": true,
+        "pages": [
+          "essentials/markdown",
+          "essentials/code",
+          "essentials/images",
+          "essentials/reusable-snippets"
+        ]
+      },
+      {
+        "group": "AI tools",
+        "hidden": true,
+        "pages": [
+          "ai-tools/cursor",
+          "ai-tools/claude-code",
+          "ai-tools/windsurf"
+        ]
       }
     ]
-    },
-    {
-    "group": "Containerization",
-    "icon": "/icons/container.svg",
-    "pages": [
-      "P-Container/docker",
-      {
-        "group": "Docker Projects",
-        "icon": "/icons/docker project.svg",
-        "expanded": false,
-        "pages": ["P-Container/deploy-Traefik-and-configure-with-Cloudflare",
-                  "P-Container/Deploy-Traefik-locally-withmk-cert",
-                  "P-Container/HAProxy-Docker-Deployment-Automated-SSL-with-Lets-Encrypt",
-                  "P-Container/Deploying-Nginx-Proxy-Manager-Centralized-SSL-Reverse-Proxy-in-Docker",
-                  "P-Container/deploy-fumadocs-with-docker-and-github-actions"
-        ]
-      },
-      "P-Container/docker-troubleshooting",
-      {
-        "group": "Container Orchestration",
-        "icon": "/icons/container-orchestration.svg",
-        "expanded": false,
-        "pages": ["P-Container/Docker-Swarm",
-        {
-        "group": "Docker Swarm Projects",
-        "icon": "/icons/docker project.svg",
-        "expanded": false,
-        "pages": ["P-Container/edge-architecture-for-docker-swarm-deploying-haproxy-in-front-of-traefik-with-real-time-traffic-analytics-via-goaccess"
-        ]
-      },
-                  "P-Container/kubernetes"
-      ]
-      }
-    ]
-    },
-    {
-    "group": "Automation Tools",
-    "icon": "/icons/autometion-tools.svg",
-    "expanded": false,
-    "pages": [
-      "P-Automation-tools/Automation-Tools"
-    ]
-    },
-    {
-      "group": "Getting started",
-      "hidden": true,
-      "pages": [
-        "quickstart",
-        "development"
-      ]
-    },
-    {
-      "group": "Customization",
-      "hidden": true,
-      "pages": [
-        "essentials/settings",
-        "essentials/navigation"
-      ]
-    },
-    {
-      "group": "Writing content",
-      "hidden": true,
-      "pages": [
-        "essentials/markdown",
-        "essentials/code",
-        "essentials/images",
-        "essentials/reusable-snippets"
-      ]
-    },
-    {
-      "group": "AI tools",
-      "hidden": true,
-      "pages": [
-        "ai-tools/cursor",
-        "ai-tools/claude-code",
-        "ai-tools/windsurf"
-      ]
-    }
-  ],
+  },
   "global": {
     "anchors": [
-      
       {
         "anchor": "My Profile",
         "href": "https://riad.com.bd",
         "icon": "user-circle"
       }
     ]
-  }
-},
+  },
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
@@ -155,15 +170,15 @@
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
