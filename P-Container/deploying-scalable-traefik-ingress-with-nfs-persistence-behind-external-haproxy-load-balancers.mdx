@@ -108,3 +108,61 @@ providers:
 log:
   level: INFO
 ```
+b. Create the necessary directories for Traefik on the NFS share:
+```bash
+sudo mkdir -p /mnt/nfs-share/traefik/certs
+sudo mkdir -p /mnt/nfs-share/traefik/logs
+sudo touch /mnt/nfs-share/traefik/acme.json
+sudo chmod 600 /mnt/nfs-share/traefik/acme.json
+``` 
+c. Deploy Traefik using Docker Swarm with the following `docker-compose.yml` file:
+```yaml
+services:
+  traefik:
+    image: traefik:v3.6.7
+    hostname: "{{.Node.Hostname}}-traefik" # Set hostname for each Traefik instance
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt/nfs-share/traefik/traefik.yml:/etc/traefik/traefik.yml:ro # Traefik config
+    ports:
+      - target: 80 # Public HTTP Port
+        published: 80
+        protocol: tcp # TCP protocol
+        mode: host
+      - target: 443       
+        published: 443      
+        protocol: tcp       
+        mode: host          
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+    networks:
+      - traefik
+      - monitoring
+    environment:
+      - TZ=Asia/Dhaka
+    deploy:
+      mode: global # Deploy one instance per node
+      placement:
+        constraints: [node.role == manager] # Only on manager nodes
+      labels:
+        - "traefik.enable=true"
+        - "traefik.swarm.network=traefik" # Specify the Traefik network
+        # Dashboard Router Configuration
+        - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.palonet.org`)"
+        - "traefik.http.routers.traefik-dashboard.entrypoints=web"
+        - "traefik.http.routers.traefik-dashboard.service=api@internal"
+        # THE FIX: Link the router to the auth middleware
+        - "traefik.http.routers.traefik-dashboard.middlewares=dashboard-auth"
+        # Define the Authentication Middleware
+        - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$2y$$05$$4fBcZsW4Oa7KhuxDpJJ9vu/D0g2.T9JrOFuFfLauoIKWJEuFr1ouu"
+        # THE FIX: Explicitly define the port for the traefik-traefik service
+        - "traefik.http.services.traefik-traefik.loadbalancer.server.port=8080"
+
+networks:
+  traefik:
+    external: true
+  monitoring:
+    external: true
+```
