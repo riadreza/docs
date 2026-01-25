@@ -46,8 +46,8 @@ services:
   geoip-updater:
     image: ghcr.io/maxmind/geoipupdate:latest
     environment:
-      - GEOIPUPDATE_ACCOUNT_ID=1285047
-      - GEOIPUPDATE_LICENSE_KEY=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
+      - GEOIPUPDATE_ACCOUNT_ID=12xxxxx
+      - GEOIPUPDATE_LICENSE_KEY=xxxxxxxxxxxxxx
       - GEOIPUPDATE_EDITION_IDS=GeoLite2-City GeoLite2-ASN
       - GEOIPUPDATE_FREQUENCY=72
     volumes:
@@ -79,14 +79,14 @@ services:
       --output=/report/index.html
       --addr=0.0.0.0
       --port=7890
-      --ws-url=wss://stats.palonet.org:443/ws
+      --ws-url=wss://stats.riad.com.bd:443/ws
       --geoip-database=/geoip/GeoLite2-City.mmdb
       -d
       --double-decode
       # Hide your own domain so you see real referrers
-      --hide-referer=palonet.org
-      --hide-referer=container.palonet.org
-      --hide-referer=stats.palonet.org
+      --hide-referer=riad.com.bd
+      --hide-referer=container.riad.com.bd
+      --hide-referer=stats.riad.com.bd
     deploy:
       replicas: 1  # Changed to 1 to avoid NFS write conflicts
       labels:
