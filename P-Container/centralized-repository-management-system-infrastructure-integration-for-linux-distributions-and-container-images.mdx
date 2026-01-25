@@ -122,11 +122,12 @@ a. Access the Nexus Repository Manager UI by navigating to `http://repo.riad.com
 b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
 1. **RPM Repository**: GO to Settings > Repositories > Create repository > yum (proxy).
 2. **DEB Repository**: GO to Settings > Repositories > Create repository > apt (proxy).
-    *a. Go to Settings > Repositories > Create repository > apt (proxy).
+    a. Go to Settings > Repositories > Create repository > apt (proxy).
     b. GIve it a name, e.g., `ubuntu-focal-proxy`. consider creating separate repositories for different Ubuntu versions like `ubuntu-bionic-proxy`, `ubuntu-jammy-proxy`, etc.
     c. Dicstribution: focal
     d. Remote Storage: https://archive.ubuntu.com/ubuntu
     e. Blob Store: default or create a new one.
     f. Cleanup Policy: Leave default or set as per your retention policy. or create a new one.
     g. Click Create repository.
+**
 3. **Docker Repository**: GO to Settings > Repositories > Create repository > apt (proxy).
