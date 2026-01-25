@@ -193,11 +193,11 @@ b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
    - create or edit the Docker daemon configuration file `/etc/docker/daemon.json` with the following content:
    ```plaintext
    Types: deb
-  Types: deb
-  URIs: https://repo.riad.com.bd/repository/docker-apt-proxy-nobel/
-  Suites: noble
-  Components: stable
-  Signed-By: /etc/apt/keyrings/docker.asc
+    Types: deb
+    URIs: https://repo.riad.com.bd/repository/docker-apt-proxy-nobel/
+    Suites: noble
+    Components: stable
+    Signed-By: /etc/apt/keyrings/docker.asc
    ```
 2. for jammy:
    - create or edit the Docker daemon configuration file `/etc/docker/daemon.json` with the following content:
@@ -244,4 +244,3 @@ A3: Regularly back up your Nexus data, monitor repository usage, update to the l
   - **Solution**: Check the network bandwidth and latency. Ensure that the Nexus server has sufficient resources (CPU, memory) to handle requests efficiently. Consider enabling caching for frequently accessed packages.
 ## Acknowledgments
 We would like to thank the open-source community for their contributions to Nexus Repository Manager and Docker, which have made this integration possible. Special thanks to the developers and maintainers who continuously improve these tools, enabling organizations to build efficient and secure software delivery pipelines.    
-    
