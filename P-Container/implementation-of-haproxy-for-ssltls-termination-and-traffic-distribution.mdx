@@ -102,3 +102,97 @@ listen stats_prometheus
     http-request use-service prometheus-exporter ## Enable Prometheus exporter
     stats auth admin:##########
 ```
+### Step 2: Create Docker Compose File
+Create a `docker-compose.yml` file in the `/opt/haproxy/` directory with the following content:
+```yaml
+services:
+  haproxy:
+    image: haproxy:lts 
+    container_name: haproxy-production
+    restart: always
+    network_mode: host # Use host networking for direct access to host ports
+    user: root ## Run as root to allow binding to low-numbered ports
+    # THE FIX: Use a shell to run haproxy and pipe output to the NFS log file
+    command: /bin/sh -c "haproxy -f /usr/local/etc/haproxy/haproxy.cfg | tee -a /var/log/haproxy/haproxy.log"
+    volumes:
+      - /opt/palonet/haproxy/config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - /opt/palonet/haproxy/certs:/opt/palonet/haproxy/certs:ro
+      - /opt/palonet/haproxy/errors:/opt/palonet/haproxy/errors:ro
+      - /mnt/nfs-share/goaccess/logs/haproxy:/var/log/haproxy
+    logging:
+      driver: "json-file" ## Use JSON-formatted logging
+      options:
+        max-size: "50m" ## Maximum size of each log file
+        max-file: "3" ## Maximum number of log files to retain
+```
+## Step 3: Deploy HAProxy Container
+Navigate to the `/opt/haproxy/` directory and run the following command to deploy the HAProxy container:
+```bash
+cd /opt/haproxy/
+docker-compose -f docker-compose.yml up -d
+```
+## Troubleshooting
+- **Check HAProxy Logs**: If you encounter issues, check the HAProxy logs located at `/var/log/haproxy/haproxy.log`.
+- **Verify Backend Health**: Ensure that the backend services are healthy and accessible by HAProxy.
+- **SSL/TLS Issues**: Verify that the SSL/TLS certificates are correctly configured and valid.
+- **Network Configuration**: Ensure that the necessary ports (80 and 443) are open and accessible.  
+## Conclusion
+By following the steps outlined in this guide, you have successfully implemented HAProxy for SSL/TLS    
+termination and traffic distribution. This setup enhances the security, performance, and scalability of your applications by efficiently managing incoming traffic and offloading SSL/TLS processing from backend servers. For further customization and optimization, refer to the [official HAProxy documentation](https://www.haproxy.org/documentation/).   
+## Additional Resources
+- [HAProxy Official Website](https://www.haproxy.org/)
+- [HAProxy Documentation](https://www.haproxy.org/documentation/)
+- [Docker Official Website](https://www.docker.com/)
+- [Docker Documentation](https://docs.docker.com/)
+- [Docker Swarm Official Website](https://docs.docker.com/engine/swarm/)
+- [Docker Swarm Documentation](https://docs.docker.com/engine/swarm/)
+---## FAQ
+### Q1: Can HAProxy handle both HTTP and HTTPS traffic simultaneously?
+```plaintext
+Yes, HAProxy can be configured to handle both HTTP and HTTPS traffic simultaneously by binding to different ports (e.g., port 80 for HTTP and port 443 for HTTPS) in the frontend configuration.
+```
+### Q2: How do I update SSL/TLS certificates in HAProxy?
+```plaintext
+To update SSL/TLS certificates in HAProxy, you need to replace the existing certificate files in the specified directory (e.g., /opt/palonet/haproxy/certs/) and then reload or restart the HAProxy service to apply the changes.
+```     
+### Q3: What load balancing algorithms does HAProxy support?
+```plaintext
+HAProxy supports various load balancing algorithms, including round-robin, least connections, source IP hash, and more. You can specify the desired algorithm in the backend configuration using the 'balance' directive.
+``` 
+### Q4: How can I monitor HAProxy performance?
+```plaintext
+You can monitor HAProxy performance using the built-in statistics page, which can be enabled in the configuration file. Additionally, you can integrate HAProxy with monitoring tools like Prometheus and Grafana for more advanced metrics and visualization.
+``` 
+### Q5: Is it possible to use HAProxy in a Docker Swarm environment?
+```plaintext    
+Yes, HAProxy can be deployed in a Docker Swarm environment. You can create a Docker service for HAProxy and configure it to run in swarm mode, allowing for high availability and scalability.
+``` 
+### Q6: How do I handle WebSocket connections with HAProxy?
+```plaintext    
+To handle WebSocket connections with HAProxy, you need to ensure that the appropriate headers (Upgrade and Connection) are set in the frontend configuration. This allows HAProxy to properly manage WebSocket connections and forward them to the backend services.
+``` 
+### Q7: Can HAProxy perform health checks on backend services?
+```plaintext    
+HAProxy can perform health checks on backend    
+services using the 'option httpchk' directive in the backend configuration. You can specify the health check method and expected response to ensure that only healthy backend servers receive traffic.
+```
+### Q8: What are some best practices for securing HAProxy?
+```plaintext
+Some best practices for securing HAProxy include:
+- Regularly updating HAProxy to the latest version to benefit from security patches.
+- Using strong SSL/TLS configurations and ciphers.
+- Implementing access controls and rate limiting to protect against DDoS attacks.
+- Monitoring logs for suspicious activity.
+```
+### Q9: How can I optimize HAProxy performance?
+```plaintext
+To optimize HAProxy performance, consider the following:
+- Tuning timeout settings based on your application's needs.
+- Enabling keep-alive connections to reduce latency.    
+- Using appropriate load balancing algorithms for your traffic patterns.
+- Monitoring resource usage and scaling HAProxy instances as needed.
+```
+### Q10: Can HAProxy be used for TCP traffic as well?
+```plaintext
+Yes, HAProxy can be configured to handle TCP traffic in addition to HTTP/HTTPS. You can set up TCP frontends and backends in the configuration file to manage TCP connections effectively.
+``` 
