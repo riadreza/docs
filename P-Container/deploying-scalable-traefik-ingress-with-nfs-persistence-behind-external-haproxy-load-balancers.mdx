@@ -155,7 +155,7 @@ services:
         - "traefik.enable=true"
         - "traefik.swarm.network=traefik" # Specify the Traefik network
         # Dashboard Router Configuration
-        - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.palonet.org`)"
+        - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.riad.com.bd`)"
         - "traefik.http.routers.traefik-dashboard.entrypoints=web"
         - "traefik.http.routers.traefik-dashboard.service=api@internal"
         # THE FIX: Link the router to the auth middleware

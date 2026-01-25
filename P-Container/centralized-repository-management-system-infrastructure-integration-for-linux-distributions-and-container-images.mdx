@@ -91,7 +91,7 @@ services:
         - "traefik.http.services.nexus-ui-svc.loadbalancer.server.port=8081"
 
         # DOCKER ROUTER: Port 8083 (Standard pulls)
-        - "traefik.http.routers.nexus-docker.rule=Host(`repo.palonet.org`) && PathPrefix(`/v2`)"
+        - "traefik.http.routers.nexus-docker.rule=Host(`repo.riad.com.bd`) && PathPrefix(`/v2`)"
         - "traefik.http.routers.nexus-docker.entrypoints=web"
         - "traefik.http.routers.nexus-docker.service=nexus-docker-svc"
         - "traefik.http.services.nexus-docker-svc.loadbalancer.server.port=8083"
