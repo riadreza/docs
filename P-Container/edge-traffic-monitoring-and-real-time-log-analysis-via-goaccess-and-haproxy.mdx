@@ -38,5 +38,89 @@ graph TD
     style G fill:#f9f,stroke:#333,stroke-width:2px  
 ```
 ## Step 1: Setting up HAProxy
-You can check the HAProxy setup guide [here](P-Container/implementation-of-haproxy-for-ssltls-termination-and-traffic-distribution.mdx) to deploy HAProxy as a reverse proxy for your backend services.
+You can check the HAProxy setup guide [here](implementation-of-haproxy-for-ssltls-termination-and-traffic-distribution.mdx) to deploy HAProxy as a reverse proxy for your backend services.
 ## Step 2: Configuring GoAccess for Real-Time Log Analysis
+a. Create a Docker Compose file named `docker-compose.yml` with the following content:
+```yaml
+services:
+  geoip-updater:
+    image: ghcr.io/maxmind/geoipupdate:latest
+    environment:
+      - GEOIPUPDATE_ACCOUNT_ID=1285047
+      - GEOIPUPDATE_LICENSE_KEY=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
+      - GEOIPUPDATE_EDITION_IDS=GeoLite2-City GeoLite2-ASN
+      - GEOIPUPDATE_FREQUENCY=72
+    volumes:
+      - /mnt/nfs-share/goaccess/geoip:/usr/share/GeoIP
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  goaccess-engine:
+    image: allinurl/goaccess:latest
+    networks:
+      - traefik
+    environment:
+      - TZ=Asia/Dhaka
+    volumes:
+      - /mnt/nfs-share/goaccess/logs/haproxy:/logs:ro
+      - /mnt/nfs-share/goaccess/report:/report
+      # --- ADDED THIS LINE BELOW ---
+      - /mnt/nfs-share/goaccess/geoip:/geoip:ro
+    command: >
+      /logs/haproxy.log
+      --log-format='%h:%^ [%d:%t.%^] %^ %^ %^/%^/%^/%^/%L %s %b %^ %^ %^ %^/%^/%^/%^/%^ %^/%^ %^ %^ "%r" {%R} {%u}'
+      --time-format='%H:%M:%S'
+      --date-format='%d/%b/%Y'
+      --tz=Asia/Dhaka
+      --real-time-html
+      --no-global-config
+      --output=/report/index.html
+      --addr=0.0.0.0
+      --port=7890
+      --ws-url=wss://stats.palonet.org:443/ws
+      --geoip-database=/geoip/GeoLite2-City.mmdb
+      -d
+      --double-decode
+      # Hide your own domain so you see real referrers
+      --hide-referer=palonet.org
+      --hide-referer=container.palonet.org
+      --hide-referer=stats.palonet.org
+    deploy:
+      replicas: 1  # Changed to 1 to avoid NFS write conflicts
+      labels:
+        - "traefik.enable=true"
+        - "traefik.swarm.network=traefik"
+        - "traefik.http.routers.stats-ws.rule=Host(`stats.riad.com.bd`) && PathPrefix(`/ws`)"
+        - "traefik.http.routers.stats-ws.entrypoints=web"
+        - "traefik.http.routers.stats-ws.priority=100"
+        - "traefik.http.routers.stats-ws.service=stats-ws"
+        - "traefik.http.services.stats-ws.loadbalancer.server.port=7890"
+
+  goaccess-web:
+    image: nginx:alpine
+    networks:
+      - traefik
+    volumes:
+      - /mnt/nfs-share/goaccess/report:/usr/share/nginx/html:ro
+    deploy:
+      replicas: 2
+      labels:
+        - "traefik.enable=true"
+        - "traefik.swarm.network=traefik"
+        - "traefik.http.routers.stats.rule=Host(`stats.riad.com.bd`)"
+        - "traefik.http.routers.stats.entrypoints=web"
+        - "traefik.http.routers.stats.priority=1"
+        - "traefik.http.routers.stats.service=stats"
+        - "traefik.http.services.stats.loadbalancer.server.port=80"
+
+networks:
+  traefik:
+    external: true
+  # --- ADDED THIS TO PREVENT goaccess_default ---
+  default:
+    external: true
+    name: traefik
+```
+
