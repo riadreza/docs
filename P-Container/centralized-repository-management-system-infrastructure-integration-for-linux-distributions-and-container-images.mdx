@@ -129,5 +129,66 @@ b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
     e. Blob Store: default or create a new one.
     f. Cleanup Policy: Leave default or set as per your retention policy. or create a new one.
     g. Click Create repository.
-**
 3. **Docker Repository**: GO to Settings > Repositories > Create repository > apt (proxy).
+    a. Go to Settings > Repositories > Create repository > docker (hosted).
+    b. Give it a name, e.g., `docker-hosted`.
+    c. Remote Storage: https://download.docker.com/linux/ubuntu
+    d. Blob Store: default or create a new one.
+    e. Click Create repository.
+## Step 3: Client Side Configuration
+### a. Linux Distributions
+1. **RPM-based Systems (e.g., CentOS, RHEL)**:
+   - Create a new repo file in `/etc/yum.repos.d/`:
+   ```ini
+   [nexus-rpm]
+   name=Nexus RPM Repository
+   baseurl=http://repo.riad.com.bd/repository/rpm-repo/  
+   enabled=1
+   gpgcheck=0
+    ```
+2. **DEB-based Systems (e.g., Ubuntu, Debian)**:
+   - Add the repository to your sources list:
+   - For Ubuntu Nobel:
+   - create a file `/etc/apt/sources.list.d/nexus-deb.list` with the following content:
+   ```plaintext
+   Types: deb
+   Types: deb
+    URIs: https://repo.palonet.org/repository/ubuntu-noble-proxy/
+    Suites: noble noble-updates noble-backports
+    Components: main restricted universe multiverse
+    Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+    Types: deb
+    URIs: https://repo.palonet.org/repository/ubuntu-noble-proxy/
+    Suites: noble-security
+    Components: main restricted universe multiverse
+    Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+    ```
+    - for jammy:
+    - create a file `/etc/apt/sources.list` (Remove all other lines):
+    ```plaintext
+    deb https://repo.palonet.org/repository/ubuntu-jammy-proxy/ jammy main restricted universe multiverse
+    deb https://repo.palonet.org/repository/ubuntu-jammy-proxy/ jammy-updates main restricted universe multiverse
+    deb https://repo.palonet.org/repository/ubuntu-jammy-proxy/ jammy-backports main restricted universe multiverse
+    deb https://repo.palonet.org/repository/ubuntu-jammy-proxy/ jammy-security main restricted universe multiverse
+    ```
+    - Update the package list:
+    ```bash
+    sudo apt update
+    ```
+### b. Docker upgradation:
+1. Configure Docker to use the Nexus Docker repository:
+   - create or edit the Docker daemon configuration file `/etc/docker/daemon.json` with the following content:
+   ```plaintext
+   Types: deb
+  Types: deb
+  URIs: https://repo.palonet.org/repository/docker-apt-proxy-nobel/
+  Suites: noble
+  Components: stable
+  Signed-By: /etc/apt/keyrings/docker.asc
+   ```
+2. for jammy:
+   - create or edit the Docker daemon configuration file `/etc/docker/daemon.json` with the following content:
+    ```plaintext
+    deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://repo.palonet.org/repository/docker-apt-proxy/ jammy stable
+    ```
