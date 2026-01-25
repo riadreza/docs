@@ -28,27 +28,17 @@ The deployment involves setting up Nexus Repository Manager in a Docker containe
 4. **Implement Security Measures**: Configure access controls and security settings to protect your repositories.   
 ## Logical Diagram
 ```plaintext    
-+-------------------+          +------------------+
-|                   |          |                  |     
-|   Developers      +--------->|   Nexus Repo     |
-|                   |          |   Manager        |
-+-------------------+          +------------------+ 
-         |                              |
-         |                              |
-         v                              v
-+-------------------+          +------------------+
-|                   |          |                  |
-|   CI/CD Pipeline  +--------->|   Linux Distros  |
-|                   |          |   (RPM/DEB)      |
-+-------------------+          +------------------+
-         |                              |
-         |                              |
-         v                              v   
-+-------------------+          +------------------+
-|                   |          |                  | 
-|   Container       +--------->|   Docker Images  |
-|                   |          |                  |
-+-------------------+          +------------------+
+graph TD
+    A[Developers / CI/CD] -->|Push/Pull Artifacts| B(Nexus Repository Manager)
+    B -->|Proxy Requests| C[External Repositories <br>(Docker Hub, Ubuntu, etc.)]
+    B -->|Serve Cached/Hosted| A
+    
+    subgraph "Nexus Hosts"
+        B
+        direction LR
+        B1[Container Images <br> (docker)]
+        B2[Linux Packages <br> (apt/yum)]
+    end
 ```
 ## Step 1: Deploy Nexus Repository Manager
 a. Create a Docker Compose file named `docker-compose.yml` with the following content:
@@ -100,18 +90,18 @@ networks:
   traefik:
     external: true
 ```
-b. Create the necessary directories on your NFS share:
+b. Create the necessary directories on your NFS share: +Create the necessary directories on your NFS share:
 ```bash
 mkdir -p /mnt/nfs-share/nexus/data
 mkdir -p /mnt/nfs-share/nexus/storage
 ```
-c. Give file system permissions to the `nexus` user (UID 200):
+c. Give file system permissions to the nexus user (UID 200): +Give file system permissions to the nexus user (UID 200), which runs the Nexus process inside the container:
 ```bash
 sudo chown -R 200:200 /opt/nexus-data
 sudo chown -R 200:200 /mnt/nfs-share/nexus-storage
 sudo chown -R 200:200 /mnt/nfs-share/nexus/data
 ``` 
-d. Deploy the Nexus Repository Manager using Docker Compose:
+-d. Deploy the Nexus Repository Manager using Docker Compose: +Deploy the Nexus Repository Manager as a Docker stack:
 ```bash
 docker stack deploy -c docker-compose.yml nexus
 ```
