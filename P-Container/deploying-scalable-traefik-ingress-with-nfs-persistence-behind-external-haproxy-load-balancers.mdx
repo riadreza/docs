@@ -115,7 +115,12 @@ sudo mkdir -p /mnt/nfs-share/traefik/logs
 sudo touch /mnt/nfs-share/traefik/acme.json
 sudo chmod 600 /mnt/nfs-share/traefik/acme.json
 ``` 
-c. Deploy Traefik using Docker Swarm with the following `docker-compose.yml` file:
+c. For self signed certificates, place your `cert.pem` and `key.pem` files in the `certs` directory:
+```bash
+sudo mv cert.pem /mnt/nfs-share/traefik/certs/cert.pem
+sudo mv key.pem /mnt/nfs-share/traefik/certs/key.pem
+```
+d. Deploy Traefik using Docker Swarm with the following `docker-compose.yml` file:
 ```yaml
 services:
   traefik:
@@ -166,7 +171,7 @@ networks:
   monitoring:
     external: true
 ```
-d. Deploy the stack to Docker Swarm:
+e. Deploy the stack to Docker Swarm:
 ```bash
 docker stack deploy -c docker-compose.yml traefik
 ```
