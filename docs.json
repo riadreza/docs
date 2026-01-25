@@ -106,6 +106,7 @@
                   "P-Container/edge-architecture-for-docker-swarm-deploying-haproxy-in-front-of-traefik-with-real-time-traffic-analytics-via-goaccess",
                   "P-Container/implementation-of-haproxy-for-ssltls-termination-and-traffic-distribution",
                   "P-Container/deploying-scalable-traefik-ingress-with-nfs-persistence-behind-external-haproxy-load-balancers",
+                  "P-Container/edge-traffic-monitoring-and-real-time-log-analysis-via-goaccess-and-haproxy",
                   "P-Container/centralized-repository-management-system-infrastructure-integration-for-linux-distributions-and-container-images"
                 ]
               },
