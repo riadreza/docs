@@ -6,3 +6,54 @@ tags: ["Traefik", "Ingress Controller", "NFS Persistence", "HAProxy", "Load Bala
 keywords: ["Traefik", "Ingress", "NFS", "HAProxy", "Load Balancer", "Docker Swarm", "Kubernetes"]
 ---
 ## Introduction
+In this guide, we will explore how to deploy a scalable Traefik ingress controller with NFS persistence behind external HAProxy load balancers. This setup is ideal for managing incoming traffic to your Docker Swarm or Kubernetes clusters while ensuring high availability and persistence for your applications.
+<Info>
+## Prerequisites
+Before we begin, ensure you have the following prerequisites in place:
+- A server or virtual machine with Docker and Docker Swarm installed.
+- HAProxy installed and configured as an external load balancer.
+- An NFS server set up for persistent storage.
+- Basic knowledge of Docker, Docker Swarm, and Traefik.
+</Info>
+## Overview of the Deployment   
+The deployment consists of the following components:
+1. **HAProxy Load Balancers**: These will handle incoming traffic and distribute it to the Traefik ingress controllers.
+2. **Traefik Ingress Controllers**: These will manage routing of requests to the Docker Swarm or Kubernetes services.
+3. **NFS Persistence**: This will provide persistent storage for the Traefik configurations and certificates.
+## Diagram
+```plaintext    
++-------------------+          +------------------+          +------------------+
+|                   |          |                  |          |                  |       
+|   Client Browser  +--------->|   HAProxy        +--------->|   Traefik        |
+|                   |          |   Load Balancer  |          |   Ingress        |
++-------------------+          +--------+---------+          +--------+---------+
+
+                                        |                           |
+                                        |                           |
+                                +--------v---------+         +-------v--------+
+                                |                  |         |                |
+                                |   NFS Server     |         |   Backend Apps |
+                                |   (Persistence)  |         |                |
+                                +------------------+         +----------------+
+```     
+## Directory Structure
+```plaintext
+/mnt/nfs-share/traefik/
+├── acme.json          # Traefik ACME (Let's Encrypt) storage/ if we use self-signed certs
+├── certs/            # Directory for SSL certificates 
+├── traefik.yml       # Traefik configuration file  
+└── logs/             # Directory for Traefik logs
+```
+## Benifites of traefik ingress with nfs persistence behind haproxy
+- **Scalability**: Easily scale Traefik instances based on traffic demands.
+- **High Availability**: HAProxy ensures that traffic is evenly distributed and provides failover capabilities.
+- **Persistence**: NFS provides a reliable way to store Traefik configurations and SSL certificates.
+- **Centralized Management**: Traefik's dynamic configuration capabilities allow for easy management of routing rules and services.
+## Step by step Deployment
+## Step 1: Configure HAProxy Load Balancer
+Refer to the [Implementation of HAProxy for SSL/TLS Termination and Traffic Distribution](./implementation-of-haproxy-for-ssltls-termination-and-traffic-distribution.mdx) guide for detailed instructions on setting up HAProxy as a load balancer.
+## Step 2: Set Up NFS Server
+Refer to the [Setting Up an NFS Server for Persistent Storage](./setting-up-nfs-server-for-persistent-storage.mdx) guide for instructions on configuring an NFS server.
+## Step 3: Deploy Traefik Ingress Controller
+a. Create a `traefik.yml` configuration file for Traefik:
+```yaml
