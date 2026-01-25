@@ -57,3 +57,54 @@ Refer to the [Setting Up an NFS Server for Persistent Storage](./setting-up-nfs-
 ## Step 3: Deploy Traefik Ingress Controller
 a. Create a `traefik.yml` configuration file for Traefik:
 ```yaml
+api:
+  dashboard: true ## Enable the Traefik dashboard
+  insecure: false ## Disable insecure access to the dashboard
+
+entryPoints:
+  web:
+    address: ":80"
+    # 1. Accept the binary Proxy Protocol from HAProxy
+    proxyProtocol:
+      trustedIPs:
+        - "127.0.0.1/32"  # Localhost
+        - "192.168.xx.xx/32"  # Your standalone HAProxy Node IP
+    # 2. Trust the HTTP Headers (X-Forwarded-For)
+    forwardedHeaders: ## Trust the X-Forwarded headers from HAProxy
+      trustedIPs:
+        - "127.0.0.1/32"
+        - "192.168.xx.xx/32"
+
+  websecure: ## Secure entry point for HTTPS
+    address: ":443"
+    proxyProtocol:
+      trustedIPs:
+        - "127.0.0.1/32"
+        - "192.168.xx.xx/32"
+    forwardedHeaders:
+      trustedIPs:
+        - "127.0.0.1/32"
+        - "192.168.xx.xx/32"
+  metrics: ## Metrics endpoint
+    address: ":8082"
+
+metrics:
+  prometheus:
+    entryPoint: metrics
+    addEntryPointsLabels: true ## Add labels for entry points
+    addRoutersLabels: true ## Add labels for routers
+    addServicesLabels: true ## Add labels for services
+
+ping:
+  entryPoint: web ## Ping endpoint for health checks
+
+providers:
+  # This is the dedicated Swarm provider for Traefik v3
+  swarm:
+    endpoint: "unix:///var/run/docker.sock" ## Docker socket for Swarm
+    exposedByDefault: false
+    network: traefik
+
+log:
+  level: INFO
+```
