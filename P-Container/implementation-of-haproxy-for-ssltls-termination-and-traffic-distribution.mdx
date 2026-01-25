@@ -58,7 +58,7 @@ defaults
 
 frontend fe_main ## Frontend for HTTP traffic
     bind *:80 ## Listen on port 80 for HTTP traffic
-    bind *:443 ssl crt /opt/palonet/haproxy/certs/palonet.org.pem alpn h2,http/1.1 ## Listen on port 443 for HTTPS traffic with SSL certificate
+    bind *:443 ssl crt /opt/palonet/haproxy/certs/riad.com.bd.pem alpn h2,http/1.1 ## Listen on port 443 for HTTPS traffic with SSL certificate
     
     # 1. Capture the SSL handshake error if it exists
     tune.ssl.capture-buffer-size 128

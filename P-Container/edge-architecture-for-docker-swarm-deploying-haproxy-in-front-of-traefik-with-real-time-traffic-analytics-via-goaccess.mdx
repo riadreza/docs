@@ -76,7 +76,7 @@ defaults
 
 frontend fe_main
     bind *:80
-    bind *:443 ssl crt /opt/palonet/haproxy/certs/palonet.org.pem alpn h2,http/1.1
+    bind *:443 ssl crt /opt/palonet/haproxy/certs/riad.com.bd.pem alpn h2,http/1.1
 
     # This captures the browser string
     capture request header User-Agent len 512

@@ -135,6 +135,18 @@ b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
     c. Remote Storage: https://download.docker.com/linux/ubuntu
     d. Blob Store: default or create a new one.
     e. Click Create repository.
+4. **Docker image Repository**: GO to Settings > Repositories > Create repository > docker (proxy).
+    a. Go to Settings > Repositories > Create repository > docker (proxy).
+    b. Give it a name, e.g., `docker-apt-proxy`.
+    c. URL: https://repo.riad.com.bd/repository/docker-hub-proxy/
+    d. http: 8083
+    e. Allow anonymous docker pull: checked
+    f. Enable docker API V1: checked
+    g. Remote Storage: https://registry-1.docker.io
+    h. Docker Index: Docker Hub
+    i. Blob Store: default or create a new one.
+    j. Cleanup Policy: Leave default or set as per your retention policy. or create a new one.
+    k. Click Create repository.
 ## Step 3: Client Side Configuration
 ### a. Linux Distributions
 1. **RPM-based Systems (e.g., CentOS, RHEL)**:
@@ -153,13 +165,13 @@ b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
    ```plaintext
    Types: deb
    Types: deb
-    URIs: https://repo.palonet.org/repository/ubuntu-noble-proxy/
+    URIs: https://repo.riad.com.bd/repository/ubuntu-noble-proxy/
     Suites: noble noble-updates noble-backports
     Components: main restricted universe multiverse
     Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 
     Types: deb
-    URIs: https://repo.palonet.org/repository/ubuntu-noble-proxy/
+    URIs: https://repo.riad.com.bd/repository/ubuntu-noble-proxy/
     Suites: noble-security
     Components: main restricted universe multiverse
     Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
@@ -167,10 +179,10 @@ b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
     - for jammy:
     - create a file `/etc/apt/sources.list` (Remove all other lines):
     ```plaintext
-    deb https://repo.palonet.org/repository/ubuntu-jammy-proxy/ jammy main restricted universe multiverse
-    deb https://repo.palonet.org/repository/ubuntu-jammy-proxy/ jammy-updates main restricted universe multiverse
-    deb https://repo.palonet.org/repository/ubuntu-jammy-proxy/ jammy-backports main restricted universe multiverse
-    deb https://repo.palonet.org/repository/ubuntu-jammy-proxy/ jammy-security main restricted universe multiverse
+    deb https://repo.riad.com.bd/repository/ubuntu-jammy-proxy/ jammy main restricted universe multiverse
+    deb https://repo.riad.com.bd/repository/ubuntu-jammy-proxy/ jammy-updates main restricted universe multiverse
+    deb https://repo.riad.com.bd/repository/ubuntu-jammy-proxy/ jammy-backports main restricted universe multiverse
+    deb https://repo.riad.com.bd/repository/ubuntu-jammy-proxy/ jammy-security main restricted universe multiverse
     ```
     - Update the package list:
     ```bash
@@ -182,7 +194,7 @@ b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
    ```plaintext
    Types: deb
   Types: deb
-  URIs: https://repo.palonet.org/repository/docker-apt-proxy-nobel/
+  URIs: https://repo.riad.com.bd/repository/docker-apt-proxy-nobel/
   Suites: noble
   Components: stable
   Signed-By: /etc/apt/keyrings/docker.asc
@@ -190,5 +202,46 @@ b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
 2. for jammy:
    - create or edit the Docker daemon configuration file `/etc/docker/daemon.json` with the following content:
     ```plaintext
-    deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://repo.palonet.org/repository/docker-apt-proxy/ jammy stable
+    deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://repo.riad.com.bd/repository/docker-apt-proxy/ jammy stable
     ```
+3. Restart the Docker service to apply the changes:
+    ```bash
+    sudo systemctl restart docker
+    ```
+## C. Docker image repo configuration
+1. edit the Docker daemon configuration file `/etc/docker/daemon.json` with the following content:
+```json
+{
+  "registry-mirrors": ["https://repo.riad.com.bd"],
+  "max-concurrent-downloads": 1
+}
+```
+2. Restart the Docker service to apply the changes:
+    ```bash
+    sudo systemctl restart docker
+    ```
+## Conclusion
+Integrating a centralized repository management system like Nexus Repository Manager for Linux distributions and container images significantly enhances the efficiency and security of software development workflows. By following the steps outlined in this guide, organizations can streamline dependency management, improve build times, and enforce robust security measures. As software ecosystems continue to evolve, adopting centralized repository management practices will remain a critical component of successful DevOps strategies. 
+
+## Additional Resources
+- [Nexus Repository Manager Documentation](https://help.sonatype.com/repomanager3)
+- [Docker Official Documentation](https://docs.docker.com/)
+- [YUM Repository Configuration](https://docs.fedoraproject.org/en-US/quick-docs/creating-a-yum-repository/)
+- [APT Repository Configuration](https://help.ubuntu.com/community/Repositories/Personal)
+## FAQ
+**Q1: Can Nexus Repository Manager handle multiple package formats simultaneously?**
+A1: Yes, Nexus Repository Manager supports a wide range of package formats, including Docker images, RPM, DEB, Maven, npm, and more, allowing you to manage various types of artifacts in a single platform.  
+**Q2: How can I secure access to my Nexus repositories?**
+A2: Nexus Repository Manager provides robust security features, including role-based access control (RBAC), LDAP integration, and SSL/TLS encryption to ensure that only authorized users can access your repositories. 
+**Q3: What are the best practices for maintaining a Nexus Repository Manager instance?**
+A3: Regularly back up your Nexus data, monitor repository usage, update to the latest version for security patches, and implement cleanup policies to manage storage effectively. 
+## Troubleshooting
+- **Issue**: Unable to access Nexus Repository Manager UI.
+  - **Solution**: Ensure that the Docker container is running and that the correct ports are exposed. Check firewall settings to allow traffic on port 8081.
+- **Issue**: Docker clients cannot pull images from the Nexus Docker repository.
+  - **Solution**: Verify that the Docker daemon is configured correctly to use the Nexus repository as a registry mirror. Check network connectivity between the Docker client and the Nexus server.
+- **Issue**: Slow package downloads from the repository.  
+  - **Solution**: Check the network bandwidth and latency. Ensure that the Nexus server has sufficient resources (CPU, memory) to handle requests efficiently. Consider enabling caching for frequently accessed packages.
+## Acknowledgments
+We would like to thank the open-source community for their contributions to Nexus Repository Manager and Docker, which have made this integration possible. Special thanks to the developers and maintainers who continuously improve these tools, enabling organizations to build efficient and secure software delivery pipelines.    
+    
