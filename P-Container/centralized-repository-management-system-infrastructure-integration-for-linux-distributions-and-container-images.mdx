@@ -6,3 +6,127 @@ tags: ["Repository Management", "Nexus Repository", "Linux Distributions", "Cont
 keywords: ["Repository Management", "Nexus Repository", "Linux Distributions", "Container Images", "DevOps", "CI/CD"]
 ---
 ## Introduction
+In modern software development, managing dependencies and artifacts efficiently is crucial for maintaining a streamlined workflow. A centralized repository management system, such as Nexus Repository Manager, provides a robust solution for storing, organizing, and distributing software components, including Linux distribution packages and container images. This guide explores the integration of a centralized repository management system for Linux distributions and container images, highlighting best practices and implementation strategies.   
+## Benefits of Centralized Repository Management
+1. **Improved Dependency Management**: Centralized repositories allow teams to manage dependencies effectively, ensuring that all team members have access to the same versions of libraries and packages.  
+2. **Enhanced Security**: By controlling access to repositories, organizations can enforce security policies and monitor the usage of software components.
+3. **Faster Builds**: Local caching of dependencies reduces build times by minimizing the need to fetch packages from external sources repeatedly.
+4. **Version Control**: Centralized repositories facilitate versioning of artifacts, making it easier to track changes and revert to previous versions if needed.
+5. **Support for Multiple Formats**: Nexus Repository Manager supports various package formats, including Docker images, RPM, DEB, and more, making it a versatile choice for managing different types of artifacts.
+<Info>
+## Prerequisites
+Before we begin, ensure you have the following prerequisites in place:
+- A server or virtual machine with Docker installed.
+- A domain name pointing to your server's IP address.
+- Basic knowledge of Docker and Nexus Repository Manager.
+</Info>
+## Overview of the Deployment
+The deployment involves setting up Nexus Repository Manager in a Docker container, configuring it to host Linux distribution packages (RPM and DEB), and managing container images (Docker). The following steps outline the process:
+1. **Deploy Nexus Repository Manager**: Use Docker to deploy Nexus Repository Manager on your server.
+2. **Configure Repositories**: Set up repositories for Linux distributions and container images.    
+3. **Integrate with CI/CD Pipelines**: Connect the repository manager with your CI/CD pipelines to automate the publishing and retrieval of artifacts.
+4. **Implement Security Measures**: Configure access controls and security settings to protect your repositories.   
+## Logical Diagram
+```plaintext    
++-------------------+          +------------------+
+|                   |          |                  |     
+|   Developers      +--------->|   Nexus Repo     |
+|                   |          |   Manager        |
++-------------------+          +------------------+ 
+         |                              |
+         |                              |
+         v                              v
++-------------------+          +------------------+
+|                   |          |                  |
+|   CI/CD Pipeline  +--------->|   Linux Distros  |
+|                   |          |   (RPM/DEB)      |
++-------------------+          +------------------+
+         |                              |
+         |                              |
+         v                              v   
++-------------------+          +------------------+
+|                   |          |                  | 
+|   Container       +--------->|   Docker Images  |
+|                   |          |                  |
++-------------------+          +------------------+
+```
+## Step 1: Deploy Nexus Repository Manager
+a. Create a Docker Compose file named `docker-compose.yml` with the following content:
+```yaml
+services:
+  nexus:
+    image: sonatype/nexus3:3.87.2-alpine
+    ports:
+      - "8081:8081" # UI
+      - "8083:8083" # Docker Registry
+    networks:
+      - traefik
+    environment:
+      - TZ=Asia/Dhaka
+      # Dynamic Memory: Starts small, grows up to 75% of the 4GB limit
+      - INSTALL4J_ADD_VM_PARAMS=-XX:MaxRAMPercentage=75.0 -XX:MinRAMPercentage=25.0 -XX:MaxDirectMemorySize=2g -Djava.util.prefs.userRoot=/nexus-data/javaprefs
+    volumes:
+      # Database and Config on your specific NFS path
+      - /mnt/nfs-share/nexus/data:/nexus-data
+      # Package Blobs (The heavy files) on your specific NFS path
+      - /mnt/nfs-share/nexus/storage:/nexus-storage
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      resources:
+        limits:
+          memory: 4G    # Max allowed RAM
+        reservations:
+          memory: 1G    # Guaranteed RAM
+      labels:
+        - "traefik.enable=true"
+        - "traefik.swarm.network=traefik"
+
+        # UI ROUTER: Port 8081
+        - "traefik.http.routers.nexus-ui.rule=Host(`repo.riad.com.bd`)"
+        - "traefik.http.routers.nexus-ui.entrypoints=web"
+        - "traefik.http.routers.nexus-ui.service=nexus-ui-svc"
+        - "traefik.http.services.nexus-ui-svc.loadbalancer.server.port=8081"
+
+        # DOCKER ROUTER: Port 8083 (Standard pulls)
+        - "traefik.http.routers.nexus-docker.rule=Host(`repo.palonet.org`) && PathPrefix(`/v2`)"
+        - "traefik.http.routers.nexus-docker.entrypoints=web"
+        - "traefik.http.routers.nexus-docker.service=nexus-docker-svc"
+        - "traefik.http.services.nexus-docker-svc.loadbalancer.server.port=8083"
+
+networks:
+  traefik:
+    external: true
+```
+b. Create the necessary directories on your NFS share:
+```bash
+mkdir -p /mnt/nfs-share/nexus/data
+mkdir -p /mnt/nfs-share/nexus/storage
+```
+c. Give file system permissions to the `nexus` user (UID 200):
+```bash
+sudo chown -R 200:200 /opt/nexus-data
+sudo chown -R 200:200 /mnt/nfs-share/nexus-storage
+sudo chown -R 200:200 /mnt/nfs-share/nexus/data
+``` 
+d. Deploy the Nexus Repository Manager using Docker Compose:
+```bash
+docker stack deploy -c docker-compose.yml nexus
+```
+## Step 2: Configure Repositories
+a. Access the Nexus Repository Manager UI by navigating to `http://repo.riad.com.bd` in your web browser. The default admin credentials are:
+- Username: `admin`
+- Password: (found in `/mnt/nfs-share/nexus/data/admin.password`)
+b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
+1. **RPM Repository**: GO to Settings > Repositories > Create repository > yum (proxy).
+2. **DEB Repository**: GO to Settings > Repositories > Create repository > apt (proxy).
+    a. Go to Settings > Repositories > Create repository > apt (proxy).
+    b. GIve it a name, e.g., `ubuntu-focal-proxy`. consider creating separate repositories for different Ubuntu versions like `ubuntu-bionic-proxy`, `ubuntu-jammy-proxy`, etc.
+    c. Dicstribution: focal
+    d. Remote Storage: https://archive.ubuntu.com/ubuntu
+    e. Blob Store: default or create a new one.
+    f. Cleanup Policy: Leave default or set as per your retention policy. or create a new one.
+    g. Click Create repository.
+3. **Docker Repository**: GO to Settings > Repositories > Create repository > apt (proxy).
