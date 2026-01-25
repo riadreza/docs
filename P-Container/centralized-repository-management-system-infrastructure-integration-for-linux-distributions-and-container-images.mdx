@@ -27,7 +27,7 @@ The deployment involves setting up Nexus Repository Manager in a Docker containe
 3. **Integrate with CI/CD Pipelines**: Connect the repository manager with your CI/CD pipelines to automate the publishing and retrieval of artifacts.
 4. **Implement Security Measures**: Configure access controls and security settings to protect your repositories.   
 ## Logical Diagram
-```plaintext    
+```mermaid
 graph TD
     A[Developers / CI/CD] -->|Push/Pull Artifacts| B(Nexus Repository Manager)
     B -->|Proxy Requests| C[External Repositories <br>(Docker Hub, Ubuntu, etc.)]
@@ -101,7 +101,7 @@ sudo chown -R 200:200 /opt/nexus-data
 sudo chown -R 200:200 /mnt/nfs-share/nexus-storage
 sudo chown -R 200:200 /mnt/nfs-share/nexus/data
 ``` 
--d. Deploy the Nexus Repository Manager using Docker Compose: +Deploy the Nexus Repository Manager as a Docker stack:
+d. Deploy the Nexus Repository Manager using Docker Compose: +Deploy the Nexus Repository Manager as a Docker stack:
 ```bash
 docker stack deploy -c docker-compose.yml nexus
 ```
