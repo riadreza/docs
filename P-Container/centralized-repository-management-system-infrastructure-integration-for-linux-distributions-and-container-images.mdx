@@ -213,7 +213,7 @@ b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
 ## d. Pull the local certificate and add it to the trusted certificates
 1. If you are using HTTPS for your Nexus Repository Manager, ensure that the SSL certificate is trusted by your clients. You may need to download the certificate from your Nexus server and add it to the trusted certificate store on your client machines.  
 ```bash
-openssl s_client -showcerts -connect repo.palonet.org:443 </dev/null 2>/dev/null | openssl x509 -outform PEM > /tmp/nexus.crt
+openssl s_client -showcerts -connect repo.riad.com.bd:443 </dev/null 2>/dev/null | openssl x509 -outform PEM > /tmp/nexus.crt
 ```
 2. Install the certificate:
 - For RPM-based systems:
