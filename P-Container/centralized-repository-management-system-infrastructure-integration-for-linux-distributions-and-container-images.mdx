@@ -210,6 +210,22 @@ b. Create repositories for Linux distributions (RPM and DEB) and Docker images:
     ```bash
     sudo systemctl restart docker
     ```
+## d. Pull the local certificate and add it to the trusted certificates
+1. If you are using HTTPS for your Nexus Repository Manager, ensure that the SSL certificate is trusted by your clients. You may need to download the certificate from your Nexus server and add it to the trusted certificate store on your client machines.  
+```bash
+openssl s_client -showcerts -connect repo.palonet.org:443 </dev/null 2>/dev/null | openssl x509 -outform PEM > /tmp/nexus.crt
+```
+2. Install the certificate:
+- For RPM-based systems:
+```bash
+sudo cp /tmp/nexus.crt /usr/local/share/ca-certificates/nexus.crt
+sudo update-ca-certificates
+```
+- For DEB-based systems:
+```bash
+sudo cp /tmp/nexus.crt /etc/pki/ca-trust
+sudo update-ca-trust
+```
 ## Conclusion
 Integrating a centralized repository management system like Nexus Repository Manager for Linux distributions and container images significantly enhances the efficiency and security of software development workflows. By following the steps outlined in this guide, organizations can streamline dependency management, improve build times, and enforce robust security measures. As software ecosystems continue to evolve, adopting centralized repository management practices will remain a critical component of successful DevOps strategies. 
 
