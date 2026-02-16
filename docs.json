@@ -31,7 +31,8 @@
                 "icon": "/icons/linux project.svg",
                 "expanded": false,
                 "pages": [
-                  "P-Linux/Setting-Up-a-Production-Ready-API-with-Nginx-and-Lets-Encrypt"
+                  "P-Linux/Setting-Up-a-Production-Ready-API-with-Nginx-and-Lets-Encrypt",
+                  "P-Linux/mounting-windows-shares-on-linux-cifs"
                 ]
               },
               {

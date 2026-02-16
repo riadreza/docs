@@ -1,0 +1,79 @@
+---
+title: Mounting Windows Shares on Linux (CIFS)
+icon: "/icons/cifs.svg"
+description: A guide on how to mount Windows shares on Linux using the CIFS protocol.
+keywords: [Linux, Windows, CIFS, Mounting, Shares]
+keywords: [Linux, Windows, CIFS, Mounting, Shares]
+tags: [Linux, Windows, CIFS, Mounting, Shares]
+---
+## Introduction
+Mounting Windows shares on Linux can be achieved using the Common Internet File System (CIFS) protocol. This guide will walk you through the steps to mount a Windows share on a Linux system.  
+<Info>
+## Prerequisites
+- A Linux system with CIFS support installed.
+- Access to a Windows share with appropriate permissions.   
+</Info>
+## Step 1: Install CIFS Utilities
+First, you need to ensure that the CIFS utilities are installed on your Linux system. You can install them using the package manager for your distribution. For example, on Debian-based systems, you can use:
+```bash
+sudo apt update
+sudo apt install cifs-utils
+```
+## Step 2: Create a Secure Credentials File
+To avoid storing your Windows share credentials in plain text, you can create a secure credentials file. Create a file named `.smbcredentials` in your home directory:
+```bash
+vi /etc/cifs-creds
+```
+Add the following content to the file, replacing `username` and `password` with your actual Windows share credentials:
+```plaintext
+username=your_username
+password=your_password
+domain=your_domain (optional)
+```
+## Step 3: Set Permissions for the Credentials File
+To ensure that only your user can read the credentials file, set the appropriate permissions:   
+```bash
+sudo chmod 600 /etc/cifs-creds
+```
+## Step 4: Mount the Windows Share (/etc/fstab)
+You can mount the Windows share manually using the `mount` command or automatically at boot by adding an entry to the `/etc/fstab` file. To add an entry to `/etc/fstab`, open the file in a text editor:
+```bash 
+sudo vi /etc/fstab
+```
+Add the following line to the end of the file, replacing `//server/share` with the actual path to your Windows share and `/mnt/windows` with the desired mount point on your Linux system:
+```plaintext
+//doamin name/shared path   /var/mysql-backup   cifs   credentials=/etc/cifs-creds,vers=3.0,sec=ntlmssp,uid=1000,gid=1000,nofail,x-systemd.automount   0   0
+```
+## Step 5: Add the Mount Point
+Before mounting the share, you need to create the mount point directory if it doesn't already exist:
+```bash 
+sudo mkdir -p /mnt/windows
+```
+## Step 6: Mount the Share
+You can now mount the share using the `mount` command:
+```bash
+sudo mount -a
+```
+Verify that the share is mounted correctly by listing the contents of the mount point:
+```bash
+sudo ls -l /mnt/windows
+```
+## Conclusion
+You have successfully mounted a Windows share on your Linux system using CIFS. You can now access the files on the Windows share from your Linux machine.           
+## Additional Resources
+- [CIFS Utilities Documentation](https://linux.developer.ibm.com/docs/cifs-utils/)
+- [Mounting Windows Shares on Linux](https://www.cyberciti.biz/faq/mounting-windows-shares-on-linux/)   
+## FAQ
+**Q: Can I mount a Windows share without using a credentials file?**  
+A: Yes, you can specify the username and password directly in the `/etc/fstab`
+entry, but it is not recommended due to security concerns. Using a credentials file is a safer approach.        
+**Q: What if I encounter permission issues when accessing the mounted share?**
+A: Ensure that the `uid` and `gid` options in the `/etc/fstab` entry are set to the correct user and group IDs that should have access to the share. You can find your user ID and group ID using the `id` command. 
+**Q: How can I unmount the Windows share?**
+A: You can unmount the share using the `umount` command:
+```bash
+sudo umount /mnt/windows
+```
+## Acknowledgments
+This guide was created with the help of various online resources and documentation on mounting Windows shares on Linux using CIFS. Special thanks to the open-source community for providing valuable insights and solutions.       
+
