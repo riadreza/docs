@@ -78,6 +78,12 @@ Replace `<VERSION_STRING>` with the desired version number.
 ```bash
 sudo apt-mark hold docker-ce docker-ce-cli containerd.io
 ```
+### 11. Check the container distribution status in docker swarm
+**Issue**: You want to check the distribution status of a container in a Docker Swarm.
+**Solution**: Use the following command to check the distribution status:
+```bash 
+docker node ps $(docker node ls -q) --filter "desired-state=running" --format "table {{.Node}}\t{{.Name}}\t{{.Image}}" | sort
+```
 ## Conclusion
 By following the troubleshooting steps outlined in this guide, you should be able to resolve common Docker issues effectively. If you encounter more complex problems, consider consulting the official Docker documentation or seeking help from the Docker community. Happy containerizing!
     
