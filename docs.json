@@ -122,7 +122,15 @@
         "expanded": false,
         "pages": [
           "P-Automation-tools/Automation-Tools",
-          "P-Automation-tools/terraform"
+          {
+            "group": "Automation Tools Projects",
+            "icon": "/icons/automation-tools.svg",
+            "expanded": false,
+            "pages": [
+              "P-Automation-tools/terraform"
+            ]
+          }
+          
         ]
       },
       {
