@@ -123,10 +123,11 @@
         "pages": [
           "P-Automation-tools/Automation-Tools",
           {
-            "group": "Automation Tools Projects",
-            "icon": "/icons/automation-tools.svg",
+            "group": "Infrastructure as Code",
+            "icon": "/icons/infrastructure-as-code.svg",
             "expanded": false,
             "pages": [
+              "P-Automation-tools/infrastructure-as-code",
               "P-Automation-tools/terraform"
             ]
           }
