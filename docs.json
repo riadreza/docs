@@ -127,7 +127,6 @@
             "icon": "/icons/infrastructure-as-code.svg",
             "expanded": false,
             "pages": [
-              "P-Automation-tools/infrastructure-as-code",
               "P-Automation-tools/terraform"
             ]
           }
