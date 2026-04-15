@@ -15,3 +15,7 @@ Terraform is an open-source infrastructure as code (IaC) software tool created b
 5. **State Management**: Terraform maintains a state file to keep track of the resources it manages, allowing it to detect changes and manage infrastructure effectively.
 6. **Modularity**: Terraform supports modules, which are reusable configurations that can be shared and versioned, making it easier to manage complex infrastructure.
 7. **Community and Ecosystem**: Terraform has a large and active community, with many providers and modules available, making it easier to find resources and support for your infrastructure needs.
+
+## Parameters:
+- **ami**: The Amazon Machine Image (AMI) ID to use for the EC2 instance. This parameter specifies the ID of an AMI to deploy on the server.
+- **user_data**: A script that runs when the EC2 instance is launched. This parameter allows you to provide a script that will be executed on the server during initialization, which can be used for tasks such as installing software or configuring settings.
