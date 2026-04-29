@@ -19,3 +19,6 @@ Terraform is an open-source infrastructure as code (IaC) software tool created b
 ## Parameters:
 - **ami**: The Amazon Machine Image (AMI) ID to use for the EC2 instance. This parameter specifies the ID of an AMI to deploy on the server.
 - **user_data**: A script that runs when the EC2 instance is launched. This parameter allows you to provide a script that will be executed on the server during initialization, which can be used for tasks such as installing software or configuring settings.
+
+## How does Terraform work?
+It is written in the Go programming language and uses a declarative configuration language to define infrastructure. Users write configuration files that describe the desired state of their infrastructure, and Terraform takes care of creating, updating, and deleting resources to match that state. Terraform interacts with various cloud providers and services through their APIs, allowing it to manage resources across different platforms seamlessly.
