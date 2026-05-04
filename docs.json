@@ -114,7 +114,7 @@
               "P-Kubernetes/kubernetes",
               {
                 "group": "Kubernetes Projects",
-                "icon": "/icons/kubernetes-project.svg",
+                "icon": "/icons/kubernetes-project.png",
                 "expanded": false,
                 "pages": [
                   "P-Kubernetes/kubernetes-platform-deployment"
