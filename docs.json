@@ -117,7 +117,7 @@
                 "icon": "/icons/docker project.svg",
                 "expanded": false,
                 "pages": [
-                  "P-Container/edge-architecture-for-docker-swarm-deploying-haproxy-in-front-of-traefik-with-real-time-traffic-analytics-via-goaccess"
+                  "P-Kubernetes/kubernetes-platform-deployment"
                 ]
               }
             ] 

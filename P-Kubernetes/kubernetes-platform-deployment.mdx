@@ -1,0 +1,958 @@
+---
+title: "Production-Ready Kubernetes Deployment Guide"
+description: "A comprehensive, hardware-aware guide to deploying a production-grade Kubernetes platform — from bare-metal provisioning through GitOps, networking, security, storage, and observability — with complete tool rationale and a visual architecture reference."
+tags: ["Kubernetes", "Production Deployment", "GitOps", "Observability", "Security", "Storage"] 
+keywords: ["Kubernetes", "Production Deployment", "GitOps", "Observability", "Security", "Storage", "Cluster Provisioning", "Networking", "Load Balancing", "Ingress Control", "Artifact Management"] 
+---
+
+# Production-Ready Kubernetes Deployment Guide
+
+This guide covers the complete journey from bare-metal hardware to a production-hardened Kubernetes platform. Every tool is selected for a specific operational purpose, with hardware requirements, benefits, trade-offs, and integration points clearly explained.
+
+---
+
+## Table of Contents
+
+1. [Hardware Requirements](#1-hardware-requirements)
+2. [Cluster Provisioning Tools](#2-cluster-provisioning-tools)
+3. [Networking Layer](#3-networking-layer)
+4. [Load Balancing Layer](#4-load-balancing-layer)
+5. [Ingress Control](#5-ingress-control)
+6. [Storage Layer](#6-storage-layer)
+7. [Security & Identity](#7-security--identity)
+8. [Artifact Management](#8-artifact-management)
+9. [GitOps & CI/CD](#9-gitops--cicd)
+10. [Observability Stack](#10-observability-stack)
+11. [Complete Deployment Sequence](#11-complete-deployment-sequence)
+12. [Operational Runbooks](#12-operational-runbooks)
+13. [Architecture Diagram](#13-architecture-diagram)
+
+---
+
+## 1. Hardware Requirements
+
+Before installing software, you need properly sized hardware. Kubernetes is resource-intensive, and every additional component (observability, storage, GitOps) adds overhead.
+
+### Control Plane Nodes
+
+The control plane runs the API server, scheduler, controller manager, and etcd. It is the brain of the cluster. If the control plane fails, the cluster stops accepting changes (though running pods continue).
+
+| Spec | Minimum | Production Recommended | Why It Matters |
+|------|---------|----------------------|----------------|
+| **Nodes** | 1 | 3 (HA) | etcd requires a quorum (majority). 3 nodes tolerate 1 failure. 5 nodes tolerate 2 failures. |
+| **CPU** | 2 cores | 4–8 cores | API server handles all cluster operations; etcd is CPU-intensive during writes. |
+| **RAM** | 4 GB | 16–32 GB | etcd stores the entire cluster state in memory. Insufficient RAM causes OOM kills and quorum loss. |
+| **Disk** | 100 GB SSD | 200 GB+ NVMe SSD | etcd is latency-sensitive. Slow disks cause API server timeouts and scheduling delays. |
+| **Network** | 1 Gbps | 10 Gbps | Control plane nodes constantly communicate with each other and all workers. |
+
+> **Critical**: etcd data must be on a dedicated disk or partition. Never share the etcd disk with log files or container storage. etcd uses the disk as a write-ahead log — contention kills performance.
+
+### Worker Nodes
+
+Worker nodes run your applications (pods). They need resources proportional to your workload density.
+
+| Spec | Minimum | Production Recommended | Why It Matters |
+|------|---------|----------------------|----------------|
+| **Nodes** | 1 | 3+ (N+1 redundancy) | You need at least one spare node to absorb load during maintenance or failures. |
+| **CPU** | 4 cores | 16–64 cores | More cores = more pods per node. Kubernetes default limit is 110 pods per node. |
+| **RAM** | 8 GB | 64–256 GB | Memory is the most common bottleneck. Each pod reservation reduces allocatable capacity. |
+| **Disk (OS)** | 100 GB SSD | 200 GB SSD | Hosts container images, logs, and kubelet state. |
+| **Disk (Storage)** | 500 GB | 2–10 TB raw per node | For Longhorn or local PVs. Must be unused raw disk or dedicated mount points. |
+| **Network** | 1 Gbps | 10 Gbps | Pod-to-pod traffic, storage replication, and image pulls consume significant bandwidth. |
+
+### Load Balancer Nodes (HAProxy + Keepalived)
+
+These sit outside the Kubernetes cluster and provide the external entry point.
+
+| Spec | Minimum | Production Recommended | Why It Matters |
+|------|---------|----------------------|----------------|
+| **Nodes** | 1 | 2 (HA with Keepalived) | Single LB is a single point of failure. Keepalived provides VIP failover. |
+| **CPU** | 2 cores | 4 cores | TLS termination and L7 routing are CPU-intensive at high throughput. |
+| **RAM** | 4 GB | 8 GB | Connection tracking tables consume memory. |
+| **Network** | 1 Gbps | 10 Gbps | All external traffic passes through these nodes. |
+
+### Observability Nodes
+
+Mimir, Loki, and Tempo are resource-hungry. Depending on cluster size, these may run on dedicated nodes or the worker pool.
+
+| Component | RAM | CPU | Disk | Notes |
+|-----------|-----|-----|------|-------|
+| **Mimir** | 2 GB per million series | 2 cores | 100 GB local + object storage | TSDB head and WAL are memory-intensive. |
+| **Loki** | 4–16 GB | 4–8 cores | 50 GB local + object storage | Query parallelism drives memory usage. |
+| **Tempo** | 4–16 GB | 4–8 cores | 50 GB local + object storage | Trace ingestion rate determines memory. |
+| **Grafana** | 512 MB–2 GB | 1–2 cores | 10 GB | Lightweight UI; increases with concurrent users. |
+
+> **Rule of thumb**: For a 50-node cluster with 1,000 pods, allocate 32 GB RAM and 8 cores for the observability stack.
+
+### Total Cluster Sizing Example
+
+| Role | Count | CPU | RAM | Disk | Purpose |
+|------|-------|-----|-----|------|---------|
+| Control Plane | 3 | 8 cores | 32 GB | 200 GB NVMe | API server, etcd, scheduler |
+| Worker | 5 | 32 cores | 128 GB | 500 GB SSD + 4 TB raw | Application workloads, Longhorn storage |
+| Load Balancer | 2 | 4 cores | 8 GB | 100 GB SSD | HAProxy + Keepalived |
+| **Total** | **10** | **220 cores** | **796 GB** | **~25 TB** | |
+
+---
+
+## 2. Cluster Provisioning Tools
+
+You cannot install Dex or Traefik without a cluster. The provisioning tool you choose determines how you bootstrap, upgrade, and lifecycle-manage the entire platform.
+
+### Tool Comparison
+
+| Tool | Pros | Cons | Best For |
+|------|------|------|----------|
+| **Kubeadm** | The official "standard"; very educational; maximum flexibility; works on any infrastructure | Hard to manage upgrades and scaling over time; manual etcd backup; no built-in node lifecycle management | Learning Kubernetes internals; one-off clusters; environments where you need full control |
+| **RKE2 (Rancher)** | Built for government and security; FIPS 140-2 compliant; CIS-hardened by default; embedded etcd; automated upgrades; air-gapped support | Opinionated about how things are run; Rancher ecosystem lock-in; less community diversity than kubeadm | Regulated industries; security-first organizations; air-gapped environments; teams wanting "batteries included" |
+| **Cluster API (CAPI)** | The "pro" way to manage Kubernetes; uses one Kubernetes cluster (management cluster) to manage other clusters (workload clusters); declarative infrastructure as code; multi-cloud abstraction | High learning curve; complex initial setup; requires deep understanding of Kubernetes primitives; provider-specific quirks | Platform teams managing 10+ clusters; multi-cloud or hybrid cloud; GitOps-driven infrastructure; organizations treating clusters as cattle, not pets |
+
+### Why These Tools Matter
+
+| Concern | Without a Provisioning Tool | With a Provisioning Tool |
+|---------|----------------------------|--------------------------|
+| **Bootstrap** | Manual OS installation, binary downloads, certificate generation, etcd cluster formation | Single command or manifest creates a working cluster |
+| **Upgrades** | Manual coordination: drain nodes, upgrade packages, restart services, verify API compatibility | Rolling upgrades with automated health checks and rollback |
+| **Scaling** | Manual VM provisioning, network configuration, kubeadm join commands | Declarative scaling: change a number in a manifest, the tool provisions and joins |
+| **Recovery** | Manual etcd restore from backup, certificate regeneration, node re-provisioning | Automated node replacement, etcd snapshot restoration |
+| **Consistency** | Snowflake clusters with different configurations | Identical clusters from the same template |
+
+### Kubeadm: The Foundation
+
+**Why it is required**: Kubeadm is the official Kubernetes bootstrapping tool. It is the reference implementation that other tools (RKE2, CAPI) build upon. Understanding kubeadm means understanding how Kubernetes actually works.
+
+**Benefits**:
+- **Transparency**: You see every certificate, static pod manifest, and kubeconfig file.
+- **Portability**: Works on bare metal, VMs, cloud instances, and Raspberry Pis.
+- **Flexibility**: Customize every API server flag, etcd parameter, and kubelet configuration.
+
+**Typical Workflow**:
+```bash
+# On control plane node
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --control-plane-endpoint=192.168.1.10
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+
+# On worker nodes
+sudo kubeadm join 192.168.1.10:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+```
+
+**Operational Reality**:
+- Upgrades require manual coordination: upgrade control plane nodes one by one, then workers.
+- etcd backups are your responsibility (`etcdctl snapshot save`).
+- Node replacement is manual: drain, delete, provision new VM, join.
+
+### RKE2: Security-First Distribution
+
+**Why it is required**: When your organization operates under regulatory requirements (government, healthcare, finance), you need a distribution that is certified and hardened out of the box. RKE2 provides this without manual hardening scripts.
+
+**Benefits**:
+- **FIPS 140-2 Compliance**: Uses FIPS-validated cryptographic modules. Required for US government workloads.
+- **CIS Hardening**: Applies Center for Internet Security benchmarks automatically.
+- **Embedded etcd**: No separate etcd cluster to manage. Simplifies backup and recovery.
+- **Air-Gapped Support**: Can be installed entirely from tarballs without internet access.
+- **Automated Upgrades**: Via Rancher's system-upgrade-controller; plans upgrades across nodes.
+
+**Key Differences from Standard Kubernetes**:
+- Uses **containerd** by default (no Docker dependency).
+- Runs etcd as an embedded process (not a static pod).
+- Configuration is via `/etc/rancher/rke2/config.yaml` (not flags).
+
+**Typical Workflow**:
+```bash
+# Install RKE2 server (control plane)
+curl -sfL https://get.rke2.io | sudo INSTALL_RKE2_TYPE=server sh -
+sudo systemctl enable rke2-server --now
+
+# Install RKE2 agent (worker)
+curl -sfL https://get.rke2.io | sudo INSTALL_RKE2_TYPE=agent sh -
+sudo systemctl enable rke2-agent --now
+```
+
+### Cluster API (CAPI): The Professional Approach
+
+**Why it is required**: When you manage tens or hundreds of clusters, manual provisioning becomes impossible. CAPI brings the Kubernetes declarative model (desired state, controllers, reconciliation) to cluster infrastructure itself.
+
+**Benefits**:
+- **Declarative Infrastructure**: Define clusters as YAML manifests stored in Git.
+- **GitOps Integration**: ArgoCD or Flux can manage your cluster definitions.
+- **Multi-Cloud Abstraction**: Same manifests work across vSphere, AWS, Azure, and OpenStack.
+- **Automated Lifecycle**: Creation, scaling, upgrade, and deletion are all automated.
+
+**Architecture**:
+```
+Management Cluster (Kubernetes)
+├── CAPI Core Provider
+├── Infrastructure Provider (vSphere, AWS, Azure)
+├── Bootstrap Provider (kubeadm, RKE2)
+└── Control Plane Provider
+         ↓
+    Creates & Manages
+         ↓
+Workload Cluster A (Production)
+Workload Cluster B (Staging)
+Workload Cluster C (DR)
+```
+
+**Typical Workflow**:
+```bash
+# 1. Create a management cluster (can be a single-node KinD cluster)
+kind create cluster --name management
+
+# 2. Initialize Cluster API with infrastructure provider
+clusterctl init --infrastructure vsphere
+
+# 3. Define workload cluster manifests and apply
+kubectl apply -f workload-cluster.yaml
+
+# 4. Fetch kubeconfig for workload cluster
+clusterctl get kubeconfig workload-cluster > workload.kubeconfig
+```
+
+---
+
+## 3. Networking Layer
+
+### Component: Cilium
+
+**Why it is required**: The default Kubernetes networking (kube-proxy + iptables) is functional but slow, opaque, and lacks security features. Cilium replaces this with eBPF, providing high-performance networking, zero-trust security, and deep observability in one component.
+
+**Benefits**:
+
+| Benefit | Explanation |
+|---------|-------------|
+| **eBPF Data Plane** | Kernel-level packet processing bypasses iptables overhead. 10x faster for large-scale clusters. |
+| **L3/L4/L7 Network Policies** | Restrict traffic by IP, port, HTTP path, method, or headers. Default-deny policies prevent lateral movement. |
+| **Hubble Observability** | See every network flow, DNS query, and policy verdict in real-time. No additional tools needed. |
+| **Cluster Mesh** | Connect multiple Kubernetes clusters into a single flat network with service discovery. |
+| **Service Mesh (Sidecar-less)** | mTLS, traffic management, and observability without injecting sidecars into every pod. |
+| **Bandwidth Manager** | Optimizes TCP and UDP throughput for high-performance workloads. |
+| **NodePort Acceleration** | Direct server return (DSR) reduces latency for LoadBalancer and NodePort services. |
+
+**Architecture**:
+```
+Pod A (Namespace: frontend)
+   ↓
+Cilium CNI (eBPF program attached to pod's veth)
+   ↓
+Cilium Agent (DaemonSet on every node)
+   ↓
+Cilium Operator (manages IPAM, identity allocation)
+   ↓
+Linux Kernel (eBPF maps for connection tracking, policy enforcement)
+   ↓
+Pod B (Namespace: backend) or External Network
+```
+
+**Deployment Considerations**:
+1. **Kernel Requirements**: Linux kernel 4.19+ (5.10+ recommended).
+2. **Kube-Proxy Replacement**: Cilium can fully replace kube-proxy for better performance: `--set kubeProxyReplacement=strict`.
+3. **Encryption**: Enable WireGuard for pod-to-pod encryption: `--set encryption.enabled=true --set encryption.type=wireguard`.
+4. **IPAM Mode**: For VMware/vSphere, use `cluster-pool` (Cilium-managed pod CIDR).
+
+---
+
+## 4. Load Balancing Layer
+
+### External Load Balancing: HAProxy + Keepalived
+
+**Why it is required**: In bare-metal or private cloud, there is no cloud provider to provision a load balancer in front of your cluster. You need a highly available entry point that distributes traffic across multiple Traefik instances and survives node failures.
+
+**Benefits**:
+
+| Benefit | Explanation |
+|---------|-------------|
+| **Layer 4 & 7 Balancing** | TCP passthrough for TLS or HTTP termination with header inspection. |
+| **Health Checks** | Automatically removes failed backends from the pool. No traffic sent to dead nodes. |
+| **VIP Failover** | Keepalived moves the virtual IP to a standby node in < 3 seconds using VRRP. |
+| **SSL Offloading** | HAProxy terminates TLS, reducing CPU load on Traefik and application pods. |
+| **Sticky Sessions** | Session affinity for stateful applications that require consistent backend connections. |
+| **Statistics UI** | Built-in web dashboard for real-time traffic monitoring and troubleshooting. |
+
+**Architecture**:
+```
+Internet / Corporate Network
+         ↓
+    Virtual IP (VIP): 192.168.1.10
+         ↓
+    Keepalived (VRRP Master)
+         ↓
+    HAProxy (Active)
+    ├─→ Traefik Node 1:30443
+    ├─→ Traefik Node 2:30443
+    └─→ Traefik Node 3:30443
+         ↓
+    Keepalived (VRRP Backup — takes over if Master fails)
+```
+
+**Hardware Placement**: Run HAProxy + Keepalived on dedicated VMs or control plane nodes (not as pods — they must survive cluster failures).
+
+### Internal Load Balancing: MetalLB
+
+**Why it is required**: Kubernetes Services of type `LoadBalancer` expect a cloud provider to provision an IP. On bare metal, this integration does not exist. Without MetalLB, you are limited to `NodePort` services with random high-numbered ports (30000–32767), which is unacceptable for production.
+
+**Benefits**:
+
+| Benefit | Explanation |
+|---------|-------------|
+| **Standard Service Types** | Supports `LoadBalancer` services natively, just like AWS or GCP. |
+| **Predictable IPs** | Admin-defined IP pools. Services get stable, known addresses. |
+| **Automatic Failover** | If the node holding a LoadBalancer IP fails, MetalLB reassigns it to a healthy node. |
+| **BGP Integration** | Announces IPs to corporate routers via BGP for true anycast distribution. |
+| **Shared IPs** | Multiple services can share one IP on different ports, conserving address space. |
+
+**Without MetalLB vs. With MetalLB**:
+
+| Feature | Without MetalLB | With MetalLB |
+|---------|-----------------|--------------|
+| **Service Type** | Limited to `NodePort` (e.g., `IP:32001`) | Supports `LoadBalancer` (e.g., `IP:443`) |
+| **User Experience** | Users must remember weird, high-numbered ports | Users use standard HTTP/HTTPS ports (80/443) |
+| **Failover** | Manual intervention or DNS-based failover | Automatic IP migration between healthy nodes |
+| **IP Management** | No central pool; ports randomly assigned | Admin-defined IP pools; predictable addresses |
+
+---
+
+## 5. Ingress Control
+
+### Component: Traefik + Gateway API
+
+**Why it is required**: Kubernetes needs an ingress controller to route external HTTP/HTTPS traffic to internal services. Traefik is modern, cloud-native, and natively supports the Gateway API — the next-generation standard that replaces the aging Ingress resource.
+
+**Benefits**:
+
+| Benefit | Explanation |
+|---------|-------------|
+| **Gateway API Native** | Role-based routing: platform team defines Gateway; app developers define HTTPRoute. No more annotation wars. |
+| **Middleware Chain** | Rate limiting, circuit breakers, basic auth, OIDC, request/response rewriting — all declarative. |
+| **Traffic Splitting** | Canary deployments, A/B testing, blue-green rollouts with percentage-based weights. |
+| **Service Mesh Integration** | Works with Cilium service mesh for mTLS and L7 policies without sidecars. |
+| **Dashboard** | Real-time routing visualization, health checks, and error rates. |
+| **Certificate Integration** | Native integration with Cert-Manager for automatic TLS on Gateway listeners. |
+
+**Ingress vs. Gateway API**:
+
+| Aspect | Kubernetes Ingress | Gateway API |
+|--------|-------------------|-------------|
+| **Resource Model** | Single Ingress resource | Gateway + Route resources (separation of concerns) |
+| **Roles** | One admin owns everything | Platform team owns Gateway; developers own Routes |
+| **Protocol Support** | HTTP/HTTPS only | HTTP, HTTPS, TCP, TLS, UDP, gRPC |
+| **Extensibility** | Annotations (messy and vendor-specific) | Typed references and parameters (clean and standardized) |
+| **Future** | Frozen; no new features | Active development; recommended by SIG-Network |
+
+---
+
+## 6. Storage Layer
+
+### Component: Longhorn
+
+**Why it is required**: Kubernetes pods are ephemeral. Without persistent storage, databases, message queues, and file stores lose all data on restart. Longhorn provides replicated, snapshot-capable, backup-ready block storage for stateful workloads.
+
+**Benefits**:
+
+| Benefit | Explanation |
+|---------|-------------|
+| **Replicated Volumes** | Each volume is synchronously replicated across 3+ worker nodes. Survives node failure without data loss. |
+| **Snapshots & Backups** | Point-in-time snapshots for quick recovery; incremental backups to S3/NFS for disaster recovery. |
+| **Thin Provisioning** | Allocate storage on demand. No wasted reserved space. |
+| **Cross-AZ Recovery** | Replicas distributed across availability zones for rack-aware HA. |
+| **UI Management** | Built-in web UI for volume status, backup jobs, and node health monitoring. |
+| **Non-Disruptive Upgrades** | Rolling upgrades of Longhorn components without volume downtime. |
+
+**Hardware Requirements**:
+- Each worker node must have unused raw disk space or a dedicated mount point.
+- Open-iscsi must be installed on every node (`apt install open-iscsi`).
+- `nfs-common` required for NFS backup targets.
+
+---
+
+## 7. Security & Identity
+
+### Component: Cert-Manager
+
+**Why it is required**: TLS certificates expire. Manual certificate management in a dynamic Kubernetes environment is a guaranteed outage. Cert-Manager automates issuance, renewal, and injection of certificates from Let's Encrypt, Vault, and private CAs.
+
+**Benefits**:
+
+| Benefit | Explanation |
+|---------|-------------|
+| **Automatic Issuance** | Request certificates via Kubernetes resources (Issuer + Certificate). No manual CSR generation. |
+| **Auto-Renewal** | Monitors expiry and renews certificates 30 days before expiration. Zero-touch maintenance. |
+| **Let's Encrypt Integration** | Free, trusted certificates with HTTP-01 or DNS-01 challenge support. |
+| **Gateway/Ingress Integration** | Automatically injects certificates into Traefik Gateway listeners and Ingress resources. |
+| **Multiple Issuers** | Let's Encrypt for public, Vault for internal, private CA for mTLS — all in one cluster. |
+
+### Component: Dex (OIDC)
+
+**Why it is required**: Kubernetes does not authenticate users — it validates tokens. Without an identity bridge, every user needs a manually distributed kubeconfig with embedded certificates. Dex connects Kubernetes to your existing corporate identity system (LDAP, Okta, Azure AD).
+
+**Benefits**:
+
+| Benefit | Explanation |
+|---------|-------------|
+| **SSO Integration** | Users authenticate with existing corporate credentials. No separate Kubernetes passwords. |
+| **Group Mapping** | LDAP groups or SAML roles map directly to Kubernetes RBAC groups. Admin access is automatic. |
+| **Token Refresh** | Handles refresh tokens so users do not re-authenticate every few hours. |
+| **Audit Trail** | All authentication events flow through your central identity provider. |
+| **No User Management in K8s** | Users are not Kubernetes objects. Onboarding/offboarding happens in LDAP/Okta. |
+
+---
+
+## 8. Artifact Management
+
+### Component: Nexus Repository
+
+**Why it is required**: Building containers and pulling dependencies from the public internet on every CI run is slow, unreliable, and insecure. Nexus provides a local cache and private host for all artifacts — Docker images, Helm charts, npm packages, Maven dependencies.
+
+**Benefits**:
+
+| Benefit | Explanation |
+|---------|-------------|
+| **Universal Format Support** | Docker, Helm, npm, Maven, PyPI, NuGet, Raw, APT, YUM — one tool for everything. |
+| **Proxy Caching** | Caches Docker Hub, Maven Central, npm registry. Survives external outages and avoids rate limits. |
+| **Private Hosting** | Internal artifacts (proprietary libraries, base images) never leave your network. |
+| **Blob Storage Backend** | S3-compatible storage for scalable, durable artifact storage. |
+| **Cleanup Policies** | Automatic deletion of old artifacts based on age or download count. Prevents unbounded growth. |
+| **RBAC** | Fine-grained permissions per repository and format. CI gets push access; developers get read access. |
+
+---
+
+## 9. GitOps & CI/CD
+
+### Component: GitLab
+
+**Why it is required**: You need a single source of truth for code, configuration, and operational knowledge. GitLab provides repository hosting, CI/CD pipelines, issue tracking, and documentation in one platform.
+
+**Benefits**:
+- **Single Source of Truth**: Code, manifests, runbooks, and issues all in one place.
+- **CI/CD Native**: `.gitlab-ci.yml` defines the entire build-test-deploy pipeline.
+- **Container Registry**: Built-in Docker registry (can mirror to Nexus).
+- **Integration**: Webhooks to ArgoCD, issue references in commits, merge request pipelines.
+
+### Component: ArgoCD
+
+**Why it is required**: Manual `kubectl apply` is error-prone and un-auditable. ArgoCD ensures the live cluster state always matches the desired state stored in Git. It is the enforcement layer for GitOps.
+
+**Benefits**:
+
+| Benefit | Explanation |
+|---------|-------------|
+| **Declarative Sync** | Git is the single source of truth. Drift is automatically detected and corrected. |
+| **ApplicationSets** | Deploy the same application to multiple environments (dev/staging/prod) from one template. |
+| **RBAC Integration** | Sync with Dex/OIDC for SSO; granular project-level permissions. |
+| **Rollback** | One-click rollback to any previous Git commit. Instant disaster recovery. |
+| **Diff Visualization** | Web UI shows exactly what will change before syncing. No surprises. |
+| **Resource Hooks** | Pre-sync, post-sync, and sync-wave hooks for complex deployment ordering (database migration before app start). |
+
+### Component: GitLab Runners
+
+**Why it is required**: CI/CD jobs need compute resources. GitLab Runners provide dynamic, scalable build execution as Kubernetes pods.
+
+**Benefits**:
+- **Autoscaling**: Jobs spin up as pods and terminate after completion. No idle workers.
+- **Kubernetes-Native**: Runs inside the cluster it deploys to. No separate build farm needed.
+- **Security**: Build isolation via pod sandboxes. Compromised build does not affect other jobs.
+
+---
+
+## 10. Observability Stack
+
+### Component: LGTM Stack (Loki, Grafana, Tempo, Mimir)
+
+**Why it is required**: Running a production cluster without observability is flying blind. You cannot debug what you cannot see. The LGTM stack provides unified metrics, logs, traces, and dashboards — all correlated.
+
+**Benefits**:
+
+| Component | Benefit | Why It Matters |
+|-----------|---------|----------------|
+| **Loki** | Label-based log indexing | 10x cheaper than Elasticsearch. Only indexes labels, not full text. |
+| **Grafana** | Unified visualization | One UI for metrics, logs, and traces. Click a metric spike → see logs → trace the request. |
+| **Tempo** | Distributed tracing | Follow a request across 20 microservices. Find latency bottlenecks and failure points. |
+| **Mimir** | Horizontally scalable metrics | Replaces Prometheus for large clusters. Object storage backend = years of retention. |
+
+**Additional Components**:
+
+| Component | Purpose | Why Required |
+|-----------|---------|--------------|
+| **Promtail** | Log collection DaemonSet | Tails container logs from `/var/log/pods/` and pushes to Loki. Required because Loki does not pull logs — something must push them. |
+| **OpenTelemetry Collector** | Trace ingestion and processing | Receives traces from applications, batches them, transforms formats (Jaeger → Tempo), and forwards. Required for vendor-neutral instrumentation. |
+| **Alertmanager** | Alert routing and grouping | Deduplicates alerts, groups by severity, routes to Slack/PagerDuty/email. Required because raw Prometheus alerts would spam channels. |
+| **Node Exporter** | Hardware/OS metrics | Exposes CPU, memory, disk, network metrics from every node. Required for cluster capacity planning. |
+| **cAdvisor** | Container metrics | Exposes per-container resource usage and performance. Required for pod-level resource optimization. |
+| **kube-state-metrics** | Kubernetes object metrics | Exposes metrics about deployments, pods, nodes, PVCs (not just their resource usage). Required for cluster health dashboards. |
+
+---
+
+## 11. Complete Deployment Sequence
+
+### Phase 1: Infrastructure Provisioning
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 1 | Provision VMs: 3 control plane, 3+ workers, 2 LB nodes | `ping` all nodes; SSH access works |
+| 2 | Install OS (Ubuntu 22.04 LTS or RHEL 9) | `cat /etc/os-release` |
+| 3 | Configure networking: static IPs, DNS, NTP | `ip addr`, `nslookup google.com`, `timedatectl` |
+| 4 | Prepare storage: mount raw disks for Longhorn | `lsblk` shows unused disks |
+| 5 | Install prerequisites: containerd, open-iscsi, nfs-common | `systemctl status containerd` |
+
+### Phase 2: Cluster Bootstrap
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 6 | Choose provisioning tool (Kubeadm / RKE2 / CAPI) | Document the decision |
+| 7 | Bootstrap control plane nodes | `kubectl get nodes` shows control planes Ready |
+| 8 | Join worker nodes | All workers show Ready |
+| 9 | Install Cilium CNI | Pods communicate across nodes; Hubble UI works |
+| 10 | Verify CoreDNS | `nslookup kubernetes.default` from a pod |
+| 11 | Install metrics-server | `kubectl top nodes` returns data |
+
+### Phase 3: Load Balancing Foundation
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 12 | Install MetalLB | `kubectl get pods -n metallb-system` all Running |
+| 13 | Configure IPAddressPool and advertisement | `kubectl get ipaddresspool` |
+| 14 | Test LoadBalancer service | EXTERNAL-IP assigned and reachable |
+| 15 | Configure HAProxy + Keepalived | VIP responds; failover works |
+| 16 | Point DNS to VIP | `nslookup apps.company.com` resolves to VIP |
+
+### Phase 4: Storage Foundation
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 17 | Install Longhorn | `kubectl get pods -n longhorn-system` all Running |
+| 18 | Verify StorageClass | `kubectl get sc` shows `longhorn` |
+| 19 | Test PVC provisioning | Volume binds, pod mounts, data persists |
+
+### Phase 5: Security Layer
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 20 | Install Cert-Manager | `kubectl get pods -n cert-manager` all Running |
+| 21 | Create ClusterIssuer (staging) | `kubectl describe clusterissuer` shows Ready |
+| 22 | Test certificate issuance | Secret created successfully |
+| 23 | Switch to production issuer | Valid Let's Encrypt cert issued |
+
+### Phase 6: Ingress Control
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 24 | Install Traefik | `kubectl get pods -n traefik` all Running |
+| 25 | Configure GatewayClass | `kubectl get gatewayclass` shows `traefik` |
+| 26 | Test Gateway + HTTPRoute | Traffic reaches backend via standard ports |
+| 27 | Integrate Cert-Manager with Gateway | HTTPS works with valid certificate |
+
+### Phase 7: Artifact Management
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 28 | Install Nexus Repository | Web UI accessible |
+| 29 | Configure Docker registry | `docker push` and `docker pull` work |
+| 30 | Configure Helm repository | `helm push` and `helm install` work |
+| 31 | Configure proxy repositories | External packages cache successfully |
+
+### Phase 8: Identity Layer
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 32 | Install Dex | `kubectl get pods -n dex` all Running |
+| 33 | Configure LDAP/Okta/Azure AD connector | Dex logs show successful binds |
+| 34 | Configure API server OIDC flags | Control plane restarted |
+| 35 | Test authentication | `kubelogin` obtains valid token |
+| 36 | Configure RBAC bindings | Users in admin group have cluster-admin |
+
+### Phase 9: GitOps
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 37 | Install ArgoCD | `kubectl get pods -n argocd` all Running |
+| 38 | Configure GitLab repository access | ArgoCD syncs from GitLab |
+| 39 | Create first Application | App syncs; resources created |
+| 40 | Configure ApplicationSets | Multi-environment deployment works |
+
+### Phase 10: Observability Stack
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 41 | Install Prometheus / Mimir | Targets page shows healthy scrapes |
+| 42 | Install Node Exporter + cAdvisor + kube-state-metrics | Metrics appear in Prometheus |
+| 43 | Install Loki + Promtail | Logs appear in Grafana Explore |
+| 44 | Install Tempo + OpenTelemetry Collector | Traces appear in Grafana Explore |
+| 45 | Install Grafana | UI accessible via HTTPS |
+| 46 | Configure data sources and dashboards | Dashboards show live data |
+| 47 | Configure Alertmanager | Test alerts reach Slack/PagerDuty |
+
+### Phase 11: CI/CD Integration
+
+| Step | Action | Verification |
+|------|--------|--------------|
+| 48 | Install GitLab Runners | Runners register; jobs execute as pods |
+| 49 | Configure pipeline stages | All stages complete successfully |
+| 50 | Test end-to-end GitOps flow | Git push → CI builds → updates manifest → ArgoCD syncs → app deploys |
+
+---
+
+## 12. Operational Runbooks
+
+### Runbook: Adding a New Worker Node
+
+```bash
+# 1. Provision VM with required specs (CPU, RAM, disk)
+# 2. Install OS and prerequisites (containerd, open-iscsi)
+# 3. Join the cluster
+kubeadm join <control-plane-endpoint>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+
+# 4. Verify
+kubectl get nodes
+kubectl label node <new-node> node-role.kubernetes.io/worker=worker
+
+# 5. Cilium auto-detects and programs eBPF
+# 6. Longhorn auto-detects and schedules replicas
+kubectl get pods -n longhorn-system
+```
+
+### Runbook: Replacing a Failed Node
+
+```bash
+# 1. Cordon the node
+kubectl cordon <failed-node>
+
+# 2. Drain the node
+kubectl drain <failed-node> --ignore-daemonsets --delete-emptydir-data
+
+# 3. Remove from cluster
+kubectl delete node <failed-node>
+
+# 4. Longhorn rebuilds replicas; MetalLB reassigns IPs; HAProxy removes from pool
+# 5. Provision replacement and join
+```
+
+### Runbook: Certificate Expiry Emergency
+
+```bash
+# 1. Check certificate status
+kubectl get certificates -A
+kubectl describe certificate <name> -n <namespace>
+
+# 2. Force re-issuance if stuck
+kubectl delete certificaterequest <request-name> -n <namespace>
+
+# 3. Verify renewal
+kubectl get secret <tls-secret> -o jsonpath='{.data.tls\.crt}' | base64 -d | openssl x509 -noout -dates
+```
+
+### Runbook: Storage Volume Degraded
+
+```bash
+# 1. Check Longhorn volumes
+kubectl get volumes -n longhorn-system
+
+# 2. Identify under-replicated volumes
+# 3. If node is down, wait or delete failed replica
+# 4. Monitor rebuild in Longhorn UI
+```
+
+### Runbook: MetalLB IP Not Responding
+
+```bash
+# 1. Check speaker pods
+kubectl get pods -n metallb-system
+kubectl logs -n metallb-system -l component=speaker
+
+# 2. Verify IPAddressPool
+kubectl get ipaddresspool -n metallb-system -o yaml
+
+# 3. Check service EXTERNAL-IP
+kubectl get svc <service-name>
+
+# 4. For Layer 2: Check ARP table
+arp -a | grep <external-ip>
+
+# 5. For BGP: Check router peering status
+```
+
+### Runbook: Traefik Gateway Not Routing
+
+```bash
+# 1. Check Traefik pods
+kubectl get pods -n traefik
+kubectl logs -n traefik -l app=traefik
+
+# 2. Verify GatewayClass
+kubectl get gatewayclass traefik -o yaml
+
+# 3. Check Gateway status
+kubectl get gateway external-gateway -n ingress -o yaml
+
+# 4. Verify HTTPRoute parentRefs
+kubectl get httproute <route-name> -n <namespace> -o yaml
+
+# 5. Check backend endpoints
+kubectl get endpoints <service-name> -n <namespace>
+```
+
+### Runbook: Cilium Network Policy Blocking Traffic
+
+```bash
+# 1. Check Hubble for drops
+hubble observe --verdict DROPPED --namespace <namespace>
+
+# 2. Check policy rules
+kubectl get ciliumpolicies -n <namespace> -o yaml
+
+# 3. Verify pod labels
+kubectl get pods -n <namespace> --show-labels
+
+# 4. Temporarily allow all for debugging
+kubectl delete ciliumpolicy <policy-name> -n <namespace>
+
+# 5. Check Cilium agent logs
+kubectl logs -n kube-system -l app=cilium
+```
+
+### Runbook: Observability Stack Down
+
+```bash
+# 1. Check component health
+kubectl get pods -n observability
+
+# 2. Check resources
+kubectl top pods -n observability
+
+# 3. Check PVC status
+kubectl get pvc -n observability
+
+# 4. If OOMKilled, increase limits
+kubectl patch statefulset mimir -n observability --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/resources/limits/memory", "value":"8Gi"}]'
+
+# 5. Check Prometheus targets
+kubectl port-forward svc/prometheus -n observability 9090:9090
+```
+
+### Runbook: GitOps Sync Failure
+
+```bash
+# 1. Check application status
+argocd app get <app-name>
+
+# 2. View sync errors
+argocd app sync <app-name> --dry-run
+
+# 3. Check for resource conflicts
+kubectl get events -n <app-namespace>
+
+# 4. Check for drift
+argocd app diff <app-name>
+
+# 5. Force sync if needed
+argocd app sync <app-name> --force
+```
+
+---
+
+## 13. Architecture Diagram
+
+Below is the complete platform architecture showing how all components integrate:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                              EXTERNAL USERS / INTERNET                                │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         LOAD BALANCING LAYER (External)                             │
+│  ┌─────────────────┐         ┌─────────────────┐                                    │
+│  │  HAProxy Node 1 │◄───────►│  HAProxy Node 2 │  (Active/Backup via Keepalived)   │
+│  │  + Keepalived   │  VRRP   │  + Keepalived   │  VIP: 192.168.1.10                │
+│  │  (MASTER)       │         │  (BACKUP)       │                                    │
+│  └────────┬────────┘         └────────┬────────┘                                    │
+│           │                           │                                             │
+│           └──────────────┬────────────┘                                             │
+│                          ▼                                                          │
+│              ┌─────────────────────┐                                                  │
+│              │   Virtual IP (VIP)  │  ← Single entry point, automatic failover      │
+│              │   192.168.1.10      │                                                  │
+│              └─────────────────────┘                                                  │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         INGRESS & SERVICE MESH LAYER                                │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                        Traefik Ingress Controller                            │   │
+│  │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                     │   │
+│  │  │  Gateway    │    │  HTTPRoute   │    │ Middleware  │  (Rate limit, auth) │   │
+│  │  │  (Platform) │    │  (App Team)  │    │  (Shared)   │                     │   │
+│  │  └─────────────┘    └─────────────┘    └─────────────┘                     │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                          │                                          │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                        Cilium Service Mesh (eBPF)                            │   │
+│  │  • mTLS between services    • L7 policies    • Traffic management           │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         KUBERNETES CLUSTER (VMware VMs)                             │
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                     CONTROL PLANE (3 VMs, HA)                                │   │
+│  │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                     │   │
+│  │  │  CP Node 1  │◄──►│  CP Node 2  │◄──►│  CP Node 3  │                     │   │
+│  │  │  API Server │ etcd│  API Server │ etcd│  API Server │ etcd                │   │
+│  │  │  Scheduler  │Quorum│  Scheduler │Quorum│  Scheduler │Quorum               │   │
+│  │  │  Controller │    │  Controller │    │  Controller │                     │   │
+│  │  └─────────────┘    └─────────────┘    └─────────────┘                     │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                          │                                          │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                     Cilium CNI (eBPF Data Plane)                           │   │
+│  │  • High-performance networking  • Network policies  • Hubble observability    │   │
+│  │  • Cluster mesh  • Bandwidth manager  • NodePort acceleration               │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                          │                                          │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                     WORKER NODES (N+1 VMs)                                   │   │
+│  │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                     │   │
+│  │  │ Worker 1    │    │ Worker 2    │    │ Worker N    │                     │   │
+│  │  │ ┌─────────┐ │    │ ┌─────────┐ │    │ ┌─────────┐ │                     │   │
+│  │  │ │ Kubelet │ │    │ │ Kubelet │ │    │ │ Kubelet │ │                     │   │
+│  │  │ │Containerd│ │    │ │Containerd│ │    │ │Containerd│ │                     │   │
+│  │  │ │  Pod    │ │    │ │  Pod    │ │    │ │  Pod    │ │                     │   │
+│  │  │ │  Pod    │ │    │ │  Pod    │ │    │ │  Pod    │ │                     │   │
+│  │  │ └─────────┘ │    │ └─────────┘ │    │ └─────────┘ │                     │   │
+│  │  │ Longhorn    │◄──►│ Longhorn    │◄──►│ Longhorn    │  (Replicated storage)│   │
+│  │  │ (Local disk)│    │ (Local disk)│    │ (Local disk)│                     │   │
+│  │  └─────────────┘    └─────────────┘    └─────────────┘                     │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                     INTERNAL LOAD BALANCING (MetalLB)                        │   │
+│  │  • LoadBalancer services on bare metal  • BGP or Layer 2 announcement        │   │
+│  │  • Automatic failover  • Shared IPs across services                          │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                     GITOPS & CI/CD                                           │   │
+│  │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐                     │   │
+│  │  │   ArgoCD    │    │ GitLab      │    │   Nexus     │                     │   │
+│  │  │  (GitOps)   │◄──►│  (Source)   │◄──►│ (Artifacts)│                     │   │
+│  │  │  Syncs Git  │    │  CI/CD      │    │ Docker/Helm│                     │   │
+│  │  │  to Cluster │    │  Pipelines  │    │ npm/Maven  │                     │   │
+│  │  └─────────────┘    └─────────────┘    └─────────────┘                     │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                     SECURITY & IDENTITY                                      │   │
+│  │  ┌─────────────┐    ┌─────────────┐                                        │   │
+│  │  │ Dex (OIDC)  │    │ Cert-Manager│                                        │   │
+│  │  │  • LDAP     │    │  • Let's    │                                        │   │
+│  │  │  • Okta     │    │    Encrypt  │                                        │   │
+│  │  │  • Azure AD │    │  • Vault    │                                        │   │
+│  │  │  • Groups   │    │  • Auto     │                                        │   │
+│  │  │    mapping  │    │    renewal  │                                        │   │
+│  │  └─────────────┘    └─────────────┘                                        │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                     OBSERVABILITY (LGTM Stack)                               │   │
+│  │                                                                               │   │
+│  │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐   │   │
+│  │  │   Grafana   │◄──►│   Mimir     │◄──►│    Loki     │◄──►│   Tempo     │   │   │
+│  │  │  (Unified   │    │  (Metrics)  │    │  (Logs)     │    │  (Traces)   │   │   │
+│  │  │   Dashboard)│    │             │    │             │    │             │   │   │
+│  │  └─────────────┘    └─────┬───────┘    └─────┬───────┘    └─────┬───────┘   │   │
+│  │                           │                  │                  │           │   │
+│  │                    ┌──────┴──────┐    ┌──────┴──────┐    ┌──────┴──────┐   │   │
+│  │                    │  Prometheus │    │  Promtail   │    │ OpenTelemetry│   │   │
+│  │                    │   Agent     │    │  (DaemonSet)│    │  Collector   │   │   │
+│  │                    │  (Scraping) │    │  (Log ship) │    │  (Ingestion) │   │   │
+│  │                    └─────────────┘    └─────────────┘    └─────────────┘   │   │
+│  │                                                                               │   │
+│  │  Supporting: Node Exporter → cAdvisor → kube-state-metrics → Alertmanager    │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                     │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                         VMWARE vSPHERE ENVIRONMENT                                    │
+│                                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────────┐   │
+│  │                     vCENTER MANAGEMENT                                         │   │
+│  │  • VM provisioning  • vMotion/DRS  • Resource pools  • Templates             │   │
+│  └─────────────────────────────────────────────────────────────────────────────┘   │
+│           │                              │                              │           │
+│           ▼                              ▼                              ▼           │
+│  ┌─────────────────┐            ┌─────────────────┐            ┌─────────────────┐   │
+│  │  ESXi Host 1    │◄──vMotion──►│  ESXi Host 2    │◄──vMotion──►│  ESXi Host N    │   │
+│  │  (3-5 nodes)    │    DRS     │  (3-5 nodes)    │    DRS     │  (3-5 nodes)    │   │
+│  │  • CPU/RAM/Disk │            │  • CPU/RAM/Disk │            │  • CPU/RAM/Disk │   │
+│  │  • VM Anti-     │            │  • VM Anti-     │            │  • VM Anti-     │   │
+│  │    Affinity     │            │    Affinity     │            │    Affinity     │   │
+│  │  • HA/FT        │            │  • HA/FT        │            │  • HA/FT        │   │
+│  └─────────────────┘            └─────────────────┘            └─────────────────┘   │
+│                                                                                     │
+│  Production Total: ~128GB+ RAM per host, shared storage (vSAN/VMFS), 10Gbps network│
+└─────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow Summary
+
+| Step | Action | Component |
+|------|--------|-----------|
+| 1 | Developer pushes code to GitLab | GitLab |
+| 2 | GitLab CI builds image, runs tests, scans vulnerabilities | GitLab Runners |
+| 3 | CI pushes Docker image to Nexus | Nexus Repository |
+| 4 | CI updates deployment manifest (image tag) in Git | GitLab |
+| 5 | ArgoCD detects Git change and syncs to cluster | ArgoCD |
+| 6 | Traefik routes external traffic to new pods | Traefik + Gateway API |
+| 7 | Cilium enforces network policies and encrypts traffic | Cilium |
+| 8 | MetalLB assigns stable IP to the service | MetalLB |
+| 9 | HAProxy + Keepalived distributes traffic from internet | HAProxy + Keepalived |
+| 10 | Longhorn persists data with 3-way replication | Longhorn |
+| 11 | LGTM stack collects metrics, logs, and traces | Mimir, Loki, Tempo, Grafana |
+| 12 | Cert-Manager ensures all TLS certificates are valid | Cert-Manager |
+| 13 | Dex authenticates users against corporate LDAP | Dex |
+
+---
+
+## Summary Matrix
+
+| Layer | Component | Why Required | Managed By |
+|-------|-----------|--------------|------------|
+| **Provisioning** | Kubeadm / RKE2 / CAPI | Cluster existence, upgrades, node lifecycle | Platform / Infrastructure Team |
+| **Hardware** | VMware vSphere + ESXi | Virtualization, HA, vMotion, resource management | Infrastructure Team |
+| **Networking** | Cilium | eBPF performance, security policies, observability | Platform Team |
+| **External LB** | HAProxy + Keepalived | VIP failover, Layer 4/7 load balancing | Infrastructure Team |
+| **Internal LB** | MetalLB | Kubernetes LoadBalancer services on bare metal | Platform / Network Team |
+| **Ingress** | Traefik + Gateway API | HTTP routing, TLS termination, traffic splitting | Platform Team |
+| **Storage** | Longhorn | Stateful workloads, data durability, backups | Platform Team |
+| **Security** | Cert-Manager | Automated TLS lifecycle | Platform Team |
+| **Identity** | Dex + RBAC | SSO, audit, team isolation | Security / Platform Team |
+| **Artifacts** | Nexus Repository | Docker images, Helm charts, package caching | DevOps / Platform Team |
+| **GitOps** | ArgoCD | Declarative deployments, drift correction | Platform Team |
+| **CI/CD** | GitLab + Runners | Build automation, security scanning | DevOps Team |
+| **Observability** | LGTM Stack | MTTR reduction, SLO compliance | Platform / SRE Team |
+
+---
+
+## Further Reading
+
+- [Kubeadm Documentation](https://kubernetes.io/docs/reference/setup-tools/kubeadm/)
+- [RKE2 Documentation](https://docs.rke2.io/)
+- [Cluster API Documentation](https://cluster-api.sigs.k8s.io/)
+- [Cilium Documentation](https://docs.cilium.io/)
+- [HAProxy Documentation](https://www.haproxy.org/#docs)
+- [Keepalived Documentation](https://www.keepalived.org/documentation.html)
+- [MetalLB Documentation](https://metallb.universe.tf/)
+- [Traefik Gateway API](https://doc.traefik.io/traefik/providers/kubernetes-gateway/)
+- [Longhorn Documentation](https://longhorn.io/docs/)
+- [Cert-Manager Documentation](https://cert-manager.io/docs/)
+- [Dex Documentation](https://dexidp.io/docs/)
+- [Nexus Repository Documentation](https://help.sonatype.com/repomanager3)
+- [ArgoCD Documentation](https://argo-cd.readthedocs.io/)
+- [Grafana LGTM Stack](https://grafana.com/oss/)
+- [Prometheus Operator](https://prometheus-operator.dev/)
+- [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/)
