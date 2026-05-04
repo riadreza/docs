@@ -111,16 +111,16 @@
                   "P-Container/centralized-repository-management-system-infrastructure-integration-for-linux-distributions-and-container-images"
                 ]
               },
-              "P-Container/kubernetes",
+              "P-Kubernetes/kubernetes",
               {
-                "group": "Kubernetetes Projects",
+                "group": "Kubernetes Projects",
                 "icon": "/icons/docker project.svg",
                 "expanded": false,
                 "pages": [
                   "P-Container/edge-architecture-for-docker-swarm-deploying-haproxy-in-front-of-traefik-with-real-time-traffic-analytics-via-goaccess"
                 ]
               }
-            ]
+            ] 
           }
         ]
       },

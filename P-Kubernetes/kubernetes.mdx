@@ -1,0 +1,648 @@
+---
+title: "Kubernetes"
+icon: "/icons/kubernetes.svg"
+description: "Explore Kubernetes, an open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications."
+tags: ["Kubernetes", "Container Orchestration", "Cloud Native", "DevOps"]
+--- 
+## Introduction
+Kubernetes, often abbreviated as K8s, is an open-source container orchestration platform that automates the deployment, scaling, and management of containerized applications. Originally developed by Google, Kubernetes has become the de facto standard for container orchestration in the industry, enabling organizations to efficiently manage their applications in a cloud-native environment.
+
+## Kubernetes Core Concepts
+
+This guide covers the essential building blocks of Kubernetes, organized chronologically from environment setup to production-ready service exposure. Every section includes not just the command, but the reasoning behind it — what is happening inside the cluster, what problems the feature solves, and what pitfalls to avoid.
+
+---
+
+## Table of Contents
+
+1. [Namespaces: Logical Isolation](#1-namespaces-logical-isolation)
+2. [Deployments and ReplicaSets](#2-deployments-and-replicasets)
+3. [Pods: The Atomic Unit](#3-pods-the-atomic-unit)
+4. [Scaling and Node Resilience](#4-scaling-and-node-resilience)
+5. [Services: Stable Networking](#5-services-stable-networking)
+6. [Node Management](#6-node-management)
+7. [Port Forwarding Techniques](#7-port-forwarding-techniques)
+8. [Common Workflow Summary](#8-common-workflow-summary)
+
+---
+
+## 1. Namespaces: Logical Isolation
+
+### What is a Namespace?
+
+A **namespace** is a virtual cluster inside a physical Kubernetes cluster. Think of it as a folder in a filesystem — it groups related resources together and provides a boundary for names, access control, and resource limits. Kubernetes creates three namespaces by default:
+
+- **`default`**: Where resources go if you do not specify a namespace.
+- **`kube-system`**: Reserved for Kubernetes control plane components (API server, scheduler, DNS, etc.).
+- **`kube-public`**: A readable namespace for cluster-wide public resources.
+
+### Why Namespaces Matter
+
+In a real-world organization, a single Kubernetes cluster often serves multiple teams, environments, or clients. Without namespaces, every resource lives in a flat global space, leading to collision and chaos.
+
+| Use Case | Purpose | Real-World Example |
+|----------|---------|-------------------|
+| **Environment Isolation** | Run `dev`, `staging`, and `prod` on the same hardware without interference | A startup saving cloud costs by using one cluster instead of three |
+| **Multi-tenancy** | Isolate teams or clients logically without physical cluster separation | SaaS platform where each customer gets their own namespace |
+| **Microservice Grouping** | Group related services under one boundary for easier management | `billing`, `auth`, and `notification` services each in their own namespace |
+| **Access Control (RBAC)** | Apply Role-Based Access Control per namespace rather than cluster-wide | Developers can deploy to `dev` but only SREs can touch `prod` |
+| **Resource Quotas** | Cap CPU, memory, and object counts per team or environment | Preventing one team's memory leak from crashing the entire cluster |
+| **Network Segmentation** | Restrict inter-namespace traffic with NetworkPolicies | Ensuring the `payment` namespace cannot be reached from `frontend` |
+
+### What Happens If You Skip Namespaces
+
+Working exclusively in the `default` namespace works for a single-person lab, but it collapses quickly in any collaborative or multi-environment setup:
+
+1. **Naming Collisions**  
+   Two pods cannot share the same name, even if they belong to different teams or applications. In `default`, you quickly run into names like `nginx-1`, `nginx-2`, `nginx-final`, `nginx-final-v2`.
+
+2. **Resource Chaos**  
+   Without resource quotas, a single misconfigured deployment (e.g., a memory leak or an infinite loop) can consume all available CPU or memory, starving other applications.
+
+3. **Security Gaps**  
+   RBAC rules and NetworkPolicies are scoped to namespaces. In `default`, you cannot easily say "Team A can only see their own pods." Everyone sees everything.
+
+4. **Management Overhead**  
+   Running `kubectl get pods` in `default` returns every pod in the cluster. Debugging becomes noisy, and accidental deletions are more likely.
+
+5. **No Clean Teardown**  
+   Without namespaces, deleting an environment means tracking down and deleting every individual pod, service, deployment, config map, and secret manually.
+
+### Creating a Namespace
+
+```bash
+# Create a dedicated namespace for Portainer
+kubectl create namespace portainer
+```
+
+> **Behind the scenes**: The API server creates a Namespace object in etcd. From this point forward, any resource created with `-n portainer` is stored under this logical boundary. The Kubernetes scheduler still places pods on physical nodes based on resource availability — namespaces do not pin workloads to specific hardware.
+
+### Deploying Into a Namespace
+
+```bash
+# Apply a manifest into a specific namespace
+kubectl apply -f https://downloads.portainer.io/ce2-21/portainer.yaml -n portainer
+```
+
+> **Important**: If the YAML file does not explicitly declare `metadata.namespace`, the `-n` flag overrides the default. If the YAML *does* declare a namespace, it must match the `-n` flag or the command will fail.
+
+### Watching Pods Come Up
+
+```bash
+# Watch pods in real-time (blocks until you press Ctrl+C)
+kubectl get pods -n portainer -w
+```
+
+> **What `-w` does**: It opens a watch stream to the API server. The server pushes updates to your terminal as pod statuses change — from `Pending` to `ContainerCreating` to `Running`. This is more efficient than repeatedly running `kubectl get pods`.
+
+### Inspecting Pods Inside a Namespace
+
+```bash
+# List all pods in a namespace
+kubectl get pods --namespace portainer
+
+# Show pod names, statuses, node assignments, and IP addresses
+kubectl get pods -n portainer -o wide
+```
+
+> **The `-o wide` output** adds columns for:
+> - **NODE**: Which physical/virtual node the pod is running on
+> - **IP**: The pod's internal cluster IP (not accessible from outside)
+> - **NOMINATED NODE**: If the scheduler pre-empted another pod to make room
+> - **READINESS GATES**: Custom conditions defined by the user
+
+### The Nuclear Option: Deleting a Namespace
+
+```bash
+# This deletes EVERYTHING inside the namespace — pods, services, deployments, secrets, config maps, ingresses
+kubectl delete namespace 2container-lab
+```
+
+> **⚠️ Warning**: Namespace deletion is asynchronous. The namespace enters a `Terminating` state while the controller garbage-collects all child resources. If a finalizer is stuck (e.g., an external resource like a cloud load balancer cannot be released), the namespace may hang indefinitely. You can check the status with:
+> ```bash
+> kubectl get namespace 2container-lab
+> kubectl describe namespace 2container-lab
+> ```
+
+---
+
+## 2. Deployments and ReplicaSets
+
+### What is a Deployment?
+
+A **Deployment** is a declarative way to manage stateless applications. You tell Kubernetes: "I want 3 replicas of this container image running." The Deployment controller then creates a **ReplicaSet**, which in turn creates and monitors the actual **Pods**.
+
+```
+Deployment → ReplicaSet → Pod(s)
+```
+
+This three-layer architecture is deliberate:
+- **Deployment** handles rolling updates, rollbacks, and declarative scaling.
+- **ReplicaSet** ensures the correct number of pods are always running.
+- **Pod** is the actual running instance.
+
+When you update a Deployment (e.g., change the image tag), Kubernetes creates a *new* ReplicaSet with the new spec and gradually shifts pods from the old ReplicaSet to the new one. The old ReplicaSet is not deleted immediately — it is scaled to zero and retained so you can roll back if needed.
+
+### Creating a Deployment
+
+```bash
+# Create a deployment named test-recovery with 3 replicas of nginx
+kubectl create deployment test-recovery --image=nginx --replicas=3
+```
+
+> **What happens internally**:
+> 1. The Deployment object is created in the API server.
+> 2. The Deployment controller notices the new object and creates a ReplicaSet with `replicas=3`.
+> 3. The ReplicaSet controller creates 3 Pod objects.
+> 4. The Scheduler assigns each Pod to a suitable node based on resource requests, taints, tolerations, and affinity rules.
+> 5. The Kubelet on each node pulls the `nginx` image (if not cached) and starts the container.
+
+### Inspecting Deployments
+
+```bash
+# List all deployments in the current namespace (default if not specified)
+kubectl get deployments
+
+# Full details: events, strategy, selectors, conditions, and recent changes
+kubectl describe deployment test-recovery
+```
+
+> **`kubectl describe` reveals**:
+> - **StrategyType**: Usually `RollingUpdate` (default) or `Recreate`
+> - **RollingUpdateStrategy**: `maxUnavailable` and `maxSurge` percentages
+> - **OldReplicaSets**: Previous ReplicaSets kept for rollback
+> - **Events**: Recent scaling, image pulls, failures, and scheduling issues
+
+### Deleting a Deployment
+
+```bash
+# Cascading delete: removes the Deployment, its ReplicaSet, and all associated Pods
+kubectl delete deployment test-recovery
+```
+
+> **Cascading behavior**: By default, `kubectl delete deployment` uses `--cascade=background`, meaning child objects are deleted by the garbage collector asynchronously. If you use `--cascade=orphan`, the ReplicaSet and Pods are left behind and become "orphaned."
+
+### The Scaling Unit: Pod vs. Container
+
+This is one of the most commonly misunderstood concepts in Kubernetes:
+
+> **Scaling occurs at the Pod level, not the Container level.**
+
+If a pod contains multiple containers (e.g., an app container + a sidecar log shipper), scaling the deployment from 1 to 5 replicas creates 5 pods, each containing *both* containers. The containers inside a pod are not distributed across nodes — they are co-located, co-scheduled, and share the same network namespace and storage volumes.
+
+**Implication**: If you have a web server and a database in the same pod, scaling the deployment replicates both. This is usually wrong. Databases should be managed by **StatefulSets**, not Deployments, and should live in separate pods.
+
+---
+
+## 3. Pods: The Atomic Unit
+
+### What is a Pod?
+
+A **Pod** is the smallest deployable unit in Kubernetes. It encapsulates:
+- One or more containers
+- Shared storage volumes
+- A unique cluster IP address
+- Rules for how the containers run
+
+Even if a pod runs only one container, the pod is the abstraction Kubernetes manages. You do not deploy containers directly — you deploy pods that contain containers.
+
+### Single-Container vs. Multi-Container Pods
+
+| Pattern | Use Case | Example |
+|---------|----------|---------|
+| **Single-container pod** | Default for most applications | A Python Flask app |
+| **Sidecar** | Helper container that augments the main app | Log shipper, monitoring agent, config reloader |
+| **Init container** | Runs to completion before the main app starts | Database schema migration, certificate generation |
+| **Ambassador** | Proxy that simplifies network access for the main app | Localhost proxy to an external database |
+| **Adapter** | Standardizes output from the main app | Metrics exporter that transforms logs into Prometheus format |
+
+### Multi-Container Pod Example (Sidecar Pattern)
+
+This example demonstrates a classic sidecar pattern: an `nginx` web server serves content, while a `debian` container continuously writes timestamp data to a shared volume.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: 2containerpod
+  namespace: 2container-lab
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: shared-data
+          mountPath: /usr/share/nginx/html
+    - name: debian-container
+      image: debian
+      volumeMounts:
+        - name: shared-data
+          mountPath: /data
+      command: ["/bin/sh", "-c"]
+      args:
+        - while true; do
+            date >> /data/index.html;
+            echo "Updating date from Debian sidecar..." >> /data/index.html;
+            sleep 5;
+          done
+  volumes:
+    - name: shared-data
+      emptyDir: {}
+```
+
+**Apply and inspect:**
+
+```bash
+kubectl apply -f multi-container.yaml
+kubectl describe pod 2containerpod -n 2container-lab
+```
+
+> **Deep dive into the components**:
+>
+> **`emptyDir` volume**: This is an ephemeral directory created when the pod is scheduled on a node. It exists for the lifetime of the pod. Both containers mount it at different paths (`/usr/share/nginx/html` for nginx, `/data` for debian), but they see the same underlying files. When the pod dies, the `emptyDir` is permanently deleted.
+>
+> **`command` and `args`**: These override the container's default entrypoint. Here, we run a shell loop that appends a timestamp every 5 seconds. If this container crashes, Kubernetes restarts it according to the pod's `restartPolicy` (default: `Always`).
+>
+> **Shared network namespace**: Both containers share `localhost`. If the debian container needed to reach nginx, it could curl `http://localhost:80`.
+
+### When to Use Multi-Container Pods
+
+Use multi-container pods only when containers are **tightly coupled**:
+- They must share a filesystem (like the example above).
+- They must communicate over `localhost` with minimal latency.
+- They share the same lifecycle — if one dies, both should be restarted.
+
+**Do NOT** put unrelated services in the same pod. If one container is a web server and the other is a cache, and they scale independently, they belong in separate pods (and usually separate deployments).
+
+### Inspecting Container Details
+
+```bash
+# Shows events, container statuses, volume mounts, conditions, and QoS class
+kubectl describe pod 2containerpod -n 2container-lab
+```
+
+> **Key fields in `describe` output**:
+> - **QoS Class**: `Guaranteed`, `Burstable`, or `BestEffort` — determines eviction priority under memory pressure
+> - **Conditions**: `PodScheduled`, `ContainersReady`, `Initialized`, `Ready`
+> - **Events**: Image pull status, scheduling decisions, volume mount errors, OOMKills
+
+---
+
+## 4. Scaling and Node Resilience
+
+### Exposing a Deployment (Preparing for Traffic)
+
+Before scaling, you need a Service so that traffic can reach your pods. A Service provides a stable endpoint that load-balances across all healthy pods matching its selector.
+
+```bash
+kubectl expose deployment nginx-deploy   --type=NodePort   --port=80   --target-port=80   -n nginx-lab
+```
+
+> **Parameter breakdown**:
+> - `--type=NodePort`: Exposes the service on a static port (30000–32767) on every node's IP
+> - `--port=80`: The port the Service listens on internally
+> - `--target-port=80`: The port the container actually exposes
+> - The Service automatically selects pods with labels matching the deployment's selector
+
+### Verifying Endpoints
+
+```bash
+kubectl get endpoints -n nginx-lab
+```
+
+> **What this shows**: The actual pod IPs that the Service is forwarding traffic to. If endpoints are empty, the Service selector does not match any running pods — usually a labeling issue.
+
+### Scaling Up
+
+```bash
+# Increase replicas from (e.g.) 3 to 6
+kubectl scale deployment nginx-deploy --replicas=6 -n nginx-lab
+```
+
+> **Behind the scenes**:
+> 1. The Deployment's `spec.replicas` is updated to 6.
+> 2. The Deployment controller notices the change and updates the ReplicaSet.
+> 3. The ReplicaSet controller creates 3 new Pod objects.
+> 4. The Scheduler places them on nodes with available resources.
+> 5. The Kubelet starts the containers.
+
+**Watch the scaling event:**
+
+```bash
+# Real-time watch of pod creation
+kubectl get pods -n nginx-lab -w
+
+# Show pod names, nodes, and IPs
+kubectl get pods -n nginx-lab -o wide
+```
+
+### Node Failure Behavior
+
+Kubernetes is designed to be self-healing, but recovery is not instant. Here is the exact timeline when a worker node fails:
+
+| Phase | Timeline | What Happens |
+|-------|----------|--------------|
+| **Heartbeat Missed** | 0s | Kubelet stops reporting node status |
+| **Node NotReady** | ~40s | Node controller marks node `NotReady` after missing heartbeats |
+| **Pod Eviction Grace Period** | ~5 minutes | Pods on the failed node are considered dead; new pods are scheduled elsewhere |
+| **Full Recovery** | 5m 40s+ | New pods are running on healthy nodes; old pods remain in `Unknown` state until the node returns or is deleted |
+
+Simulate a node failure (KinD/Docker environment):
+
+```bash
+docker stop 6-node-cluster-worker2
+```
+
+> **Why the delay?** Kubernetes assumes network partitions are temporary. If it rescheduled pods immediately after every missed heartbeat, a brief network blip would cause unnecessary churn. The 5-minute eviction grace period is configurable via the `--pod-eviction-timeout` flag on the controller manager.
+
+### Ghost Pods
+
+During node failure, pods on the lost node enter `Unknown` or `Terminating` states. These are sometimes called **ghost pods** because they appear in listings but are not actually running.
+
+**Find non-running pods:**
+
+```bash
+kubectl get pods -n nginx-lab --field-selector status.phase!=Running
+```
+
+> **Field selectors** filter objects at the API server level, reducing the amount of data transferred. Valid phases: `Pending`, `Running`, `Succeeded`, `Failed`, `Unknown`.
+
+**Force-delete stuck pods:**
+
+```bash
+kubectl delete pod <pod-name> -n nginx-lab --force --grace-period=0
+```
+
+> **⚠️ Danger**: `--force --grace-period=0` bypasses graceful shutdown. The pod is removed from the API server immediately, but if the node was only partitioned (not dead), the actual container may keep running as an orphan. Use this only when you are certain the node is gone.
+
+### Forcing a Rolling Restart
+
+If pods seem stale (e.g., stale configuration, memory fragmentation, or suspected corruption), trigger a controlled restart without changing the deployment spec:
+
+```bash
+kubectl rollout restart deployment nginx-deploy -n nginx-lab
+```
+
+> **How it works**: Kubernetes adds an annotation (`kubectl.kubernetes.io/restartedAt`) to the pod template. Because the template changed, the Deployment creates a new ReplicaSet and performs a rolling update — one pod at a time by default — ensuring zero downtime.
+
+---
+
+## 5. Services: Stable Networking
+
+### The Problem Services Solve
+
+Pods are ephemeral. Their IPs change when they:
+- Are rescheduled to a different node
+- Are restarted after a crash
+- Are scaled up or down
+- Are replaced during a rolling update
+
+If Application A hardcodes Application B's pod IP, that IP will be invalid within minutes or hours. A **Service** solves this by providing a **stable virtual IP** and **DNS name** that automatically tracks healthy pods.
+
+### How Services Select Pods
+
+Services use **label selectors**. The Service maintains an **EndpointSlice** (or legacy Endpoints) object listing all pod IPs that match the selector. The kube-proxy component on each node configures iptables/IPVS rules to load-balance traffic across these IPs.
+
+```
+Client → Service IP (stable) → iptables/IPVS → Pod IP 1
+                                          → Pod IP 2
+                                          → Pod IP 3
+```
+
+If a pod dies, the EndpointSlice is updated within seconds, and traffic stops flowing to the dead pod. If a new pod is created, it is added automatically.
+
+### Service Types Explained
+
+| Type | Use Case | Accessibility | How It Works |
+|------|----------|---------------|--------------|
+| `ClusterIP` | Internal communication (default) | Reachable only inside the cluster | Allocates a virtual IP from the cluster's service CIDR |
+| `NodePort` | External access for labs/dev | Opens a high port (30000–32767) on every node's IP | Allocates a ClusterIP, then exposes it via `<NodeIP>:<NodePort>` |
+| `LoadBalancer` | Production internet access | Provisions a cloud provider public IP | Integrates with AWS ELB, GCP LB, Azure LB, or MetalLB for on-prem |
+| `Headless` | Direct pod-to-pod discovery | DNS returns individual pod IPs instead of a cluster IP | Set `clusterIP: None`; useful for StatefulSets where each pod needs a stable identity |
+
+### Creating a NodePort Service
+
+```bash
+kubectl expose deployment nginx-deploy   --type=NodePort   --port=80   --target-port=80   --name=nginx-service   -n nginx-lab
+```
+
+**Inspect the service:**
+
+```bash
+kubectl get svc -n nginx-lab
+```
+
+> **Sample output columns**:
+> - **CLUSTER-IP**: Internal virtual IP (e.g., `10.96.123.45`)
+> - **EXTERNAL-IP**: For LoadBalancer, the cloud-assigned public IP
+> - **PORT(S)**: `80:31234/TCP` means port 80 internally, port 31234 on every node externally
+
+### Accessing NodePort Services
+
+Once created, you can reach the service via any node's IP address:
+
+```bash
+curl http://<Node-IP>:<NodePort>
+```
+
+> **Security note**: NodePort opens the port on **every** node in the cluster, even nodes not running the pod. kube-proxy routes the traffic to a healthy pod, potentially on a different node.
+
+### Headless Services
+
+A Headless Service is used when you need direct pod-to-pod communication without load balancing — common with StatefulSets (databases, message queues).
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-headless-service
+spec:
+  clusterIP: None  # This makes it headless
+  selector:
+    app: my-app
+  ports:
+    - port: 80
+```
+
+> **DNS behavior**: Instead of returning a single ClusterIP, DNS returns A records for each matching pod: `pod-0.my-headless-service.namespace.svc.cluster.local`, `pod-1.my-headless-service.namespace.svc.cluster.local`, etc.
+
+---
+
+## 6. Node Management
+
+### Understanding Node Roles
+
+A Kubernetes cluster consists of:
+- **Control plane nodes**: Run the API server, scheduler, controller manager, and etcd. These manage the cluster state.
+- **Worker nodes**: Run user workloads (pods). They run the Kubelet, container runtime, and kube-proxy.
+
+By default, if a node has no role label, Kubernetes treats it as a worker. However, explicit labeling improves clarity and enables node selectors.
+
+### Viewing Cluster Nodes
+
+```bash
+# Show all nodes and their statuses
+kubectl get nodes
+
+# Detailed node information: capacity, allocatable resources, conditions, addresses
+kubectl describe node <node-name>
+```
+
+> **Key columns in `get nodes`**:
+> - **STATUS**: `Ready`, `NotReady`, `SchedulingDisabled`
+> - **ROLES**: `control-plane`, `worker`, `<none>`
+> - **AGE**: How long the node has been in the cluster
+> - **VERSION**: Kubernetes version running on the node
+
+### Labeling Nodes
+
+Explicitly label worker nodes for clarity and scheduling control:
+
+```bash
+kubectl label node 6-node-cluster-worker node-role.kubernetes.io/worker=worker
+```
+
+> **What this does**: Adds a label to the node object. The key `node-role.kubernetes.io/worker` is a convention. The value `worker` is arbitrary but descriptive. This label can then be used in:
+> - **Node selectors**: Force a pod to run on worker nodes only
+> - **Taints and tolerations**: Prevent control-plane pods from scheduling on workers
+> - **Affinity rules**: Prefer or require certain node characteristics
+
+### Checking Pod Placement
+
+To see which physical node hosts each pod:
+
+```bash
+kubectl get pods -n portainer -o wide
+```
+
+> **Use case**: If a pod is stuck in `Pending`, check if any node has sufficient resources. If pods are unevenly distributed, consider Pod Topology Spread Constraints or cluster autoscaler.
+
+---
+
+## 7. Port Forwarding Techniques
+
+Port forwarding is essential when running local or private clusters (e.g., KinD, Minikube, or on-premise clusters without cloud load balancers). It tunnels traffic from your local machine into the cluster.
+
+### Foreground Port Forwarding
+
+```bash
+# Blocks the terminal; forwards local port 9443 to the service's port 9443
+kubectl port-forward -n portainer svc/portainer 9443:9443 --address 0.0.0.0
+```
+
+> **Parameter breakdown**:
+> - `-n portainer`: Target namespace
+> - `svc/portainer`: Target service named "portainer"
+> - `9443:9443`: Local port : Service port
+> - `--address 0.0.0.0`: Listen on all network interfaces (not just localhost), allowing other machines on your network to access it
+
+> **How it works**: The `kubectl` client opens a connection to the API server, which proxies the traffic to the service. The service then load-balances to a healthy pod. This is **not** suitable for production — it is a debugging and development tool.
+
+### Background Port Forwarding
+
+Run the forwarder as a background process so it does not block your terminal:
+
+```bash
+nohup kubectl port-forward -n portainer svc/portainer 9443:9443 --address 0.0.0.0 > /dev/null 2>&1 &
+```
+
+> **Command breakdown**:
+> - `nohup`: Prevents the process from terminating when you close the terminal
+> - `> /dev/null`: Discards stdout (connection logs)
+> - `2>&1`: Redirects stderr to stdout (so both are discarded)
+> - `&`: Runs the entire command in the background
+
+### Stopping Background Port Forwarding
+
+```bash
+# Kill all kubectl port-forward processes
+pkill -f port-forward
+```
+
+> **Caution**: `pkill -f` matches the full command line. If you have multiple port-forwards running, this kills all of them. To target a specific one, use `pgrep -f port-forward` to find the PID, then `kill <PID>`.
+
+### Alternative: Using `kubectl proxy`
+
+For API server access (not pod/service access), use:
+
+```bash
+kubectl proxy --port=8080
+```
+
+This forwards to the Kubernetes API server, allowing you to browse the API at `http://localhost:8080`.
+
+---
+
+## 8. Common Workflow Summary
+
+Here is a complete, repeatable workflow for deploying a stateless application:
+
+```bash
+# ─────────────────────────────────────────────
+# Step 1: Create namespace
+# ─────────────────────────────────────────────
+kubectl create namespace my-app
+
+# ─────────────────────────────────────────────
+# Step 2: Deploy application
+# ─────────────────────────────────────────────
+kubectl create deployment my-app   --image=my-image:latest   --replicas=3   -n my-app
+
+# ─────────────────────────────────────────────
+# Step 3: Expose service (NodePort for dev/lab)
+# ─────────────────────────────────────────────
+kubectl expose deployment my-app   --type=NodePort   --port=80   --target-port=8080   --name=my-app-service   -n my-app
+
+# ─────────────────────────────────────────────
+# Step 4: Verify endpoints
+# ─────────────────────────────────────────────
+kubectl get endpoints -n my-app
+
+# ─────────────────────────────────────────────
+# Step 5: Scale as needed
+# ─────────────────────────────────────────────
+kubectl scale deployment my-app --replicas=6 -n my-app
+
+# ─────────────────────────────────────────────
+# Step 6: Monitor
+# ─────────────────────────────────────────────
+kubectl get pods -n my-app -w
+kubectl get pods -n my-app -o wide
+kubectl top pod -n my-app              # Requires metrics-server
+
+# ─────────────────────────────────────────────
+# Step 7: Rolling restart (if needed)
+# ─────────────────────────────────────────────
+kubectl rollout restart deployment my-app -n my-app
+
+# ─────────────────────────────────────────────
+# Step 8: Clean up
+# ─────────────────────────────────────────────
+kubectl delete namespace my-app
+```
+
+---
+
+## Key Takeaways
+
+| Principle | Explanation |
+|-----------|-------------|
+| **Namespace first** | Always start with a namespace. It is the boundary for resources, security, and cleanup. A single `kubectl delete namespace` tears down an entire environment cleanly. |
+| **One container per pod by default** | Only combine containers when they must share storage, network, or lifecycle. Multi-container pods reduce scaling flexibility. |
+| **Scale pods, not containers** | Replicas duplicate the entire pod. Design pods with that in mind — do not put unrelated services together. |
+| **Services provide stability** | Never rely on pod IPs directly. Use Services for internal communication (ClusterIP) and external access (NodePort/LoadBalancer). |
+| **Node failure is graceful but not instant** | Expect ~5 minutes before full rescheduling. Plan for ghost pods during recovery, and use `--force --grace-period=0` only when necessary. |
+| **Port forwarding is for dev only** | `kubectl port-forward` is a debugging tool, not a production ingress solution. Use Ingress + LoadBalancer for real traffic. |
+| **Labels are the glue** | Deployments, Services, and NetworkPolicies all rely on labels. Consistent labeling is critical for correct behavior. |
+
+---
+
+## Further Reading
+
+- [Kubernetes Documentation — Namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
+- [Kubernetes Documentation — Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+- [Kubernetes Documentation — Pods](https://kubernetes.io/docs/concepts/workloads/pods/)
+- [Kubernetes Documentation — Services](https://kubernetes.io/docs/concepts/services-networking/service/)
+- [Kubernetes Documentation — Node](https://kubernetes.io/docs/concepts/architecture/nodes/)
